@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import './AgreementForm.css';
+
 import { FaRegCopy } from "react-icons/fa";
 import apiClient from '../../../api/apiClient';
 import { useUser } from '../../../context/UserContext';

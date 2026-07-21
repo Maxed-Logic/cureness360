@@ -5,11 +5,64 @@ import { useUser } from "../../../context/UserContext";
 import "../../../assets/dashboardcss/css/Dashboard.css";
 import { MdSupportAgent } from "react-icons/md";
 
+// ✅ Currency Configuration
+const currencyRates = {
+    USD: 1,
+    INR: 90,
+    EUR: 0.92,
+    GBP: 0.78
+};
+
+const currencySymbols = {
+    USD: "$",
+    INR: "₹",
+    EUR: "€",
+    GBP: "£"
+};
+
 const Header = () => {
   const navigate = useNavigate();
   const { logoutUser } = useUser();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
+
+  // ✅ Currency State
+  const [selectedCurrency, setSelectedCurrency] = useState(() => {
+    return localStorage.getItem("selectedCurrency") || "USD";
+  });
+
+  // ✅ Function to change currency
+  const changeCurrency = (currency) => {
+    localStorage.setItem("selectedCurrency", currency);
+    
+    document.querySelectorAll(".currency1").forEach(function(el) {
+      let amount = parseFloat(el.getAttribute("data-value"));
+      
+      if (isNaN(amount)) {
+        let text = el.innerText;
+        let match = text.match(/(\d+(?:\.\d+)?)/);
+        amount = match ? parseFloat(match[1]) : 0;
+      }
+      
+      if (!isNaN(amount)) {
+        let converted = amount * currencyRates[currency];
+        el.innerHTML = currencySymbols[currency] + converted.toLocaleString(undefined, {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        });
+      }
+    });
+    
+    // Dispatch event for other components
+    window.dispatchEvent(new CustomEvent('currencyChanged', { detail: currency }));
+  };
+
+  // ✅ Handle currency change
+  const handleCurrencyChange = (e) => {
+    const newCurrency = e.target.value;
+    setSelectedCurrency(newCurrency);
+    changeCurrency(newCurrency);
+  };
 
   // ✅ Toggle dropdown function
   const toggleDropdown = (e) => {
@@ -31,6 +84,16 @@ const Header = () => {
     };
   }, []);
 
+  // ✅ Initialize currency on mount
+  useEffect(() => {
+    let savedCurrency = localStorage.getItem("selectedCurrency") || "USD";
+    setSelectedCurrency(savedCurrency);
+    
+    setTimeout(() => {
+      changeCurrency(savedCurrency);
+    }, 100);
+  }, []);
+
   const handleLogout = () => {
     setIsDropdownOpen(false);
     logoutUser();
@@ -39,14 +102,35 @@ const Header = () => {
 
   return (
     <header className="topbar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 20px' }}>
-
+    
       <div className="left" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
         <FaHome className="Dasboard-icon" style={{ cursor: 'pointer' }} />
         <h4>Dashboard</h4>
       </div>
-
+ 
       {/* Dropdown Container */}
-      <div className="right" ref={dropdownRef} style={{ position: 'relative' }}>
+      <div className="right" ref={dropdownRef} style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: '15px' }}>
+        
+        {/* ✅ Currency Dropdown - SIRF YEH ADD KIYA HAI */}
+        <select 
+          value={selectedCurrency}
+          onChange={handleCurrencyChange}
+          style={{
+            padding: '8px 12px',
+            borderRadius: '6px',
+            border: '1px solid #ccc',
+            cursor: 'pointer',
+            fontSize: '14px',
+            backgroundColor: '#fff',
+            outline: 'none'
+          }}
+        >
+          <option value="USD">USDT ($)</option>
+          <option value="INR">INR (₹)</option>
+          <option value="EUR">EUR (€)</option>
+          <option value="GBP">GBP (£)</option>
+        </select>
+
         <button
           className="logout-btn"
           onClick={toggleDropdown}
@@ -64,7 +148,7 @@ const Header = () => {
           <FaUser fontSize={"22px"} />
         </button>
 
-        {/* Dropdown Menu - Sirf open hote time animation */}
+        {/* Dropdown Menu */}
         {isDropdownOpen && (
           <div
             style={{
@@ -82,141 +166,133 @@ const Header = () => {
               animation: 'dropdownOpen 0.2s ease-out'
             }}
           >
+            {/* Profile */}
+            <div
+              onClick={() => {
+                setIsDropdownOpen(false);
+                navigate("/dashboard/profile");
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = "#e2e8f0";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = "#f8fafc";
+              }}
+              style={{
+                padding: '12px 16px',
+                backgroundColor: '#f8fafc',
+                cursor: "pointer",
+                transition: "all 0.2s ease"
+              }}
+            >
+              <p style={{
+                margin: 0,
+                fontWeight: '500',
+                fontSize: '14px',
+                color: '#1e293b',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}>
+                <FaUser /> Profile
+              </p>
+            </div>
 
-   {/* Profile */}
-<div
-  onClick={() => {
-    setIsDropdownOpen(false);
-    navigate("/dashboard/profile");
-  }}
-  onMouseEnter={(e) => {
-    e.currentTarget.style.backgroundColor = "#e2e8f0";
-  }}
-  onMouseLeave={(e) => {
-    e.currentTarget.style.backgroundColor = "#f8fafc";
-  }}
-  style={{
-    padding: '12px 16px',
-    backgroundColor: '#f8fafc',
-    cursor: "pointer",
-    transition: "all 0.2s ease"
-  }}
->
-  <p style={{
-    margin: 0,
-    fontWeight: '500',
-    fontSize: '14px',
-    color: '#1e293b',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px'
-  }}>
-    <FaUser /> Profile
-  </p>
-</div>
+            {/* Change Password */}
+            <div
+              onClick={() => {
+                setIsDropdownOpen(false);
+                navigate("/dashboard/changepassword");
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = "#e2e8f0";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = "#f8fafc";
+              }}
+              style={{
+                padding: '12px 16px',
+                backgroundColor: '#f8fafc',
+                cursor: "pointer",
+                transition: "all 0.2s ease"
+              }}
+            >
+              <p style={{
+                margin: 0,
+                fontWeight: '500',
+                fontSize: '14px',
+                color: '#1e293b',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}>
+                <FaLockOpen /> Change Password
+              </p>
+            </div>
 
-{/* Change Password */}
-<div
-  onClick={() => {
-    setIsDropdownOpen(false);
-    navigate("/dashboard/changepassword");
-  }}
-  onMouseEnter={(e) => {
-    e.currentTarget.style.backgroundColor = "#e2e8f0";
-  }}
-  onMouseLeave={(e) => {
-    e.currentTarget.style.backgroundColor = "#f8fafc";
-  }}
-  style={{
-    padding: '12px 16px',
-    backgroundColor: '#f8fafc',
-    cursor: "pointer",
-    transition: "all 0.2s ease"
-  }}
->
-  <p style={{
-    margin: 0,
-    fontWeight: '500',
-    fontSize: '14px',
-    color: '#1e293b',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px'
-  }}>
-    <FaLockOpen /> Change Password
-  </p>
-</div>
+            {/* Active With ePin */}
+            <div
+              onClick={() => {
+                setIsDropdownOpen(false);
+                navigate("/dashboard/epin");
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = "#e2e8f0";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = "#f8fafc";
+              }}
+              style={{
+                padding: '12px 16px',
+                backgroundColor: '#f8fafc',
+                cursor: "pointer",
+                transition: "all 0.2s ease"
+              }}
+            >
+              <p style={{
+                margin: 0,
+                fontWeight: '500',
+                fontSize: '14px',
+                color: '#1e293b',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}>
+                <FaKey /> Active With ePin
+              </p>
+            </div>
 
- {/* Profile */}
-<div
-  onClick={() => {
-    setIsDropdownOpen(false);
-    navigate("/dashboard/epin");
-  }}
-  onMouseEnter={(e) => {
-    e.currentTarget.style.backgroundColor = "#e2e8f0";
-  }}
-  onMouseLeave={(e) => {
-    e.currentTarget.style.backgroundColor = "#f8fafc";
-  }}
-  style={{
-    padding: '12px 16px',
-    backgroundColor: '#f8fafc',
-    cursor: "pointer",
-    transition: "all 0.2s ease"
-  }}
->
-  <p style={{
-    margin: 0,
-    fontWeight: '500',
-    fontSize: '14px',
-    color: '#1e293b',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px'
-  }}>
-    <FaKey/> Active With ePin
-  </p>
-</div>
-
-
-
-
-
-
-<div
-  onClick={() => {
-    setIsDropdownOpen(false);
-    navigate("/dashboard/Support");
-  }}
-  onMouseEnter={(e) => {
-    e.currentTarget.style.backgroundColor = "#e2e8f0";
-  }}
-  onMouseLeave={(e) => {
-    e.currentTarget.style.backgroundColor = "#f8fafc";
-  }}
-  style={{
-    padding: '12px 16px',
-    backgroundColor: '#f8fafc',
-    cursor: "pointer",
-    transition: "all 0.2s ease"
-  }}
->
-  <p style={{
-    margin: 0,
-    fontWeight: '500',
-    fontSize: '14px',
-    color: '#1e293b',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px'
-  }}>
-    <MdSupportAgent size={16}/> Support
-  </p>
-</div>
-
-
-
+            {/* Support */}
+            <div
+              onClick={() => {
+                setIsDropdownOpen(false);
+                navigate("/dashboard/Support");
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = "#e2e8f0";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = "#f8fafc";
+              }}
+              style={{
+                padding: '12px 16px',
+                backgroundColor: '#f8fafc',
+                cursor: "pointer",
+                transition: "all 0.2s ease"
+              }}
+            >
+              <p style={{
+                margin: 0,
+                fontWeight: '500',
+                fontSize: '14px',
+                color: '#1e293b',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}>
+                <MdSupportAgent size={16} /> Support
+              </p>
+            </div>
 
             {/* Logout Button */}
             <button

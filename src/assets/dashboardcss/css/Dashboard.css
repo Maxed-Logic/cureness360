@@ -1335,8 +1335,8 @@ select:focus {
 .lines line {
   stroke: #000000 !important;
   stroke-width: 1.2;
-  stroke-dasharray: 5, 5;
-  animation: dash 2s linear infinite;
+  stroke-dasharray: 5, 8;
+  /* animation: dash 2s linear infinite; */
 }
 
 /* Backdrop blur */

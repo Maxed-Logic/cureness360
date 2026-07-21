@@ -1,134 +1,207 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "../../context/UserContext";
 import "../../assets/dashboardcss/css/Dashboard.css";
 
+// Currency Configuration
+const currencyRates = {
+    USD: 1,
+    INR: 90,
+    EUR: 0.92,
+    GBP: 0.78
+};
+
+const currencySymbols = {
+    USD: "$",
+    INR: "₹",
+    EUR: "€",
+    GBP: "£"
+};
+
 const Income = () => {
-  const navigate = useNavigate();
+    const navigate = useNavigate();
+    const { userData, loading } = useUser();
 
-  const { userData, loading } = useUser();
+    // Currency State
+    const [selectedCurrency, setSelectedCurrency] = useState(() => {
+        return localStorage.getItem("selectedCurrency") || "USD";
+    });
 
-  // Modified function to accept type parameter
-  const goToPage = (type) => {
-    navigate(`/dashboard/accstatement?type=${type}`);
-  };
+    // Function to format currency
+    const formatCurrency = (amount) => {
+        if (!amount && amount !== 0) return `${currencySymbols[selectedCurrency]}0.00`;
+        const converted = amount * currencyRates[selectedCurrency];
+        return `${currencySymbols[selectedCurrency]}${converted.toLocaleString(undefined, {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        })}`;
+    };
 
-  
+    // Function to update all currency elements
+    const changeCurrency = (currency) => {
+        localStorage.setItem("selectedCurrency", currency);
+        
+        document.querySelectorAll(".currency1").forEach(function(el) {
+            let amount = parseFloat(el.getAttribute("data-value"));
+            
+            if (isNaN(amount)) {
+                let text = el.innerText;
+                let match = text.match(/(\d+(?:\.\d+)?)/);
+                amount = match ? parseFloat(match[1]) : 0;
+            }
+            
+            if (!isNaN(amount)) {
+                let converted = amount * currencyRates[currency];
+                el.innerHTML = currencySymbols[currency] + converted.toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                });
+            }
+        });
+    };
 
-  // Loading state
-  if (loading && !userData) {
-    return (
-      <div className="text-center p-5">
-        <div className="spinner-border text-success" role="status">
-          <span className="visually-hidden">Loading...</span>
-        </div>
-        <p className="mt-2 text-white">Fetching Income Details...</p>
-      </div>
-    );
-  }
+    // Listen for currency changes from Header
+    useEffect(() => {
+        const handleCurrencyChange = () => {
+            let newCurrency = localStorage.getItem("selectedCurrency") || "USD";
+            setSelectedCurrency(newCurrency);
+            changeCurrency(newCurrency);
+        };
 
-  return (
-    <div className="flowchart-container ">
-      {/* 🏠 MAIN NODE: All Income */}
-      <div
-        className="p-3 flowchart-node wallet-buttton"
-        onClick={() => goToPage("ALL")}
-        style={{ cursor: 'pointer' }}
-      >
-        All income <br />
-        <strong> ${(userData.Working || 0).toFixed(2)}</strong>
-      </div>
+        window.addEventListener('currencyChanged', handleCurrencyChange);
+        
+        return () => {
+            window.removeEventListener('currencyChanged', handleCurrencyChange);
+        };
+    }, []);
 
-      <div className="flowchart-line-vertical"></div>
-      <div className="flowchart-line-horizontal"></div>
+    // Initialize currency on mount
+    useEffect(() => {
+        let savedCurrency = localStorage.getItem("selectedCurrency") || "USD";
+        setSelectedCurrency(savedCurrency);
+        
+        setTimeout(() => {
+            changeCurrency(savedCurrency);
+        }, 100);
+    }, [userData]);
 
-      <div className="flowchart-row">
+    // Modified function to accept type parameter
+    const goToPage = (type) => {
+        navigate(`/dashboard/accstatement?type=${type}`);
+    };
 
-        {/* 🟢 Column 1: Level & Matching */}
-        <div className="flowchart-column">
-          <div className="flowchart-node flowchart-green" onClick={() => goToPage("LEVEL INCOME")}>
-            M-Subscription Level Income <br />
-            <span style={{ color: "#105614", fontWeight: "700" }}>
-              ${userData?.LevelIncome || 0}
-            </span>
-          </div>
-          <div className="flowchart-line-vertical-small"></div>
-          <div className="flowchart-node flowchart-orange" onClick={() => goToPage("MATCHING INCOME")}>
-            M-Subscription Matching Income <br />
-            <span style={{ color: "#105614", fontWeight: "700" }}>
-              ${userData?.MatchingBonus || 0}
-            </span>
-          </div>
-        </div>
-
-
-        {/* 🟢 Column 2: IB & Reward */}
-        <div className="flowchart-column">
-          <div className="flowchart-node flowchart-green" onClick={() => goToPage("TRADING PASSIVE INCOME")}>
-            Trading Passive Income <br />
-            <span style={{ color: "#105614", fontWeight: "700" }}>
-              ${userData?.TradingPassiveIncome || 0}
-            </span>
-          </div>
-          <div className="flowchart-line-vertical-small"></div>
-
-          <div className="flowchart-column">
-            <div className="flowchart-node flowchart-green" onClick={() => goToPage("LOST IB INCOME")}>
-              IB Income <br />
-              <span style={{ color: "#105614", fontWeight: "700" }}>
-                ${userData?.IBIncome || 0}
-              </span>
+    // Loading state
+    if (loading && !userData) {
+        return (
+            <div className="text-center p-5">
+                <div className="spinner-border text-success" role="status">
+                    <span className="visually-hidden">Loading...</span>
+                </div>
+                <p className="mt-2 text-white">Fetching Income Details...</p>
             </div>
-          </div>
+        );
+    }
 
+    return (
+        <div className="flowchart-container ">
+            {/* 🏠 MAIN NODE: All Income */}
+            <div
+                className="p-3 flowchart-node wallet-buttton"
+                onClick={() => goToPage("ALL")}
+                style={{ cursor: 'pointer' }}
+            >
+                All income <br />
+                <strong className="currency1" data-value={userData?.Working || 0}>
+                    {formatCurrency(userData?.Working || 0)}
+                </strong>
+            </div>
 
+            <div className="flowchart-line-vertical"></div>
+            <div className="flowchart-line-horizontal"></div>
 
+            <div className="flowchart-row">
+
+                {/* 🟢 Column 1: Level & Matching */}
+                <div className="flowchart-column">
+                    <div className="flowchart-node flowchart-green" onClick={() => goToPage("LEVEL INCOME")}>
+                        M-Subscription Level Income <br />
+                        <span className="currency1" data-value={userData?.LevelIncome || 0} style={{ color: "#105614", fontWeight: "700" }}>
+                            {formatCurrency(userData?.LevelIncome || 0)}
+                        </span>
+                    </div>
+                    <div className="flowchart-line-vertical-small"></div>
+                    <div className="flowchart-node flowchart-orange" onClick={() => goToPage("MATCHING INCOME")}>
+                        M-Subscription Matching Income <br />
+                        <span className="currency1" data-value={userData?.MatchingBonus || 0} style={{ color: "#105614", fontWeight: "700" }}>
+                            {formatCurrency(userData?.MatchingBonus || 0)}
+                        </span>
+                    </div>
+                </div>
+
+                {/* 🟢 Column 2: IB & Reward */}
+                <div className="flowchart-column">
+                    <div className="flowchart-node flowchart-green" onClick={() => goToPage("TRADING PASSIVE INCOME")}>
+                        Trading Passive Income <br />
+                        <span className="currency1" data-value={userData?.TradingPassiveIncome || 0} style={{ color: "#105614", fontWeight: "700" }}>
+                            {formatCurrency(userData?.TradingPassiveIncome || 0)}
+                        </span>
+                    </div>
+                    <div className="flowchart-line-vertical-small"></div>
+
+                    <div className="flowchart-column">
+                        <div className="flowchart-node flowchart-green" onClick={() => goToPage("LOST IB INCOME")}>
+                            IB Income <br />
+                            <span className="currency1" data-value={userData?.IBIncome || 0} style={{ color: "#105614", fontWeight: "700" }}>
+                                {formatCurrency(userData?.IBIncome || 0)}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                {/* 🟢 Column 3: Royalty & Profit */}
+                <div className="flowchart-column">
+                    <div className="flowchart-node flowchart-green" onClick={() => goToPage("ALL")}>
+                        Royalty Income <br />
+                        <span className="currency1" data-value={userData?.RoyaltyIncome || 0} style={{ color: "#105614", fontWeight: "700" }}>
+                            {formatCurrency(userData?.RoyaltyIncome || 0)}
+                        </span>
+                    </div>
+                    <div className="flowchart-line-vertical-small"></div>
+
+                    <div className="flowchart-node flowchart-orange" onClick={() => goToPage("ALL")}>
+                        Reward Income <br />
+                        <span className="currency1" data-value={userData?.Reward || 0} style={{ color: "#105614", fontWeight: "700" }}>
+                            {formatCurrency(userData?.Reward || 0)}
+                        </span>
+                    </div>
+                </div>
+
+                {/* 🟢 Column 4: Current Bonus & Withdrawal */}
+                <div className="flowchart-column">
+                    <div className="flowchart-node flowchart-green" onClick={() => goToPage("ALL")}>
+                        Current Bonus <br />
+                        <span className="currency1" data-value={userData?.Remaining || 0} style={{ color: "#105614", fontWeight: "700" }}>
+                            {formatCurrency(userData?.Remaining || 0)}
+                        </span>
+                    </div>
+                    <div className="flowchart-line-vertical-small"></div>
+                    <div className="flowchart-node flowchart-orange" onClick={() => goToPage("FUND WITHDRAWAL")}>
+                        Withdrawal <br />
+                        <span className="currency1" data-value={userData?.withdrawal || 0} style={{ color: "#105614", fontWeight: "700" }}>
+                            {formatCurrency(userData?.withdrawal || 0)}
+                        </span>
+                    </div>
+                </div>
+
+                <div className="flowchart-node flowchart-orange" onClick={() => goToPage("ALL")}>
+                    Company Profit <br />
+                    <span className="currency1" data-value={userData?.GlobalRoyaltyIncon || 0} style={{ color: "#105614", fontWeight: "700" }}>
+                        {formatCurrency(userData?.GlobalRoyaltyIncom || 0)}
+                    </span>
+                </div>
+            </div>
         </div>
-
-        {/* 🟢 Column 3: Royalty & Profit */}
-        <div className="flowchart-column">
-          <div className="flowchart-node flowchart-green" onClick={() => goToPage("ALL")}>
-            Royalty Income <br />
-            <span style={{ color: "#105614", fontWeight: "700" }}>
-              ${userData?.RoyaltyIncome || 0}
-            </span>
-          </div>
-          <div className="flowchart-line-vertical-small"></div>
-
-          <div className="flowchart-node flowchart-orange" onClick={() => goToPage("ALL")}>
-            Reward Income <br />
-            <span style={{ color: "#105614", fontWeight: "700" }}>
-              ${userData?.Reward || 0}
-            </span>
-          </div>
-        </div>
-
-        {/* 🟢 Column 4: Current Bonus & Withdrawal */}
-        <div className="flowchart-column">
-          <div className="flowchart-node flowchart-green" onClick={() => goToPage("ALL")}>
-            Current Bonus <br />
-            <span style={{ color: "#105614", fontWeight: "700" }}>
-              ${userData?.Remaining || 0}
-            </span>
-          </div>
-          <div className="flowchart-line-vertical-small"></div>
-          <div className="flowchart-node flowchart-orange" onClick={() => goToPage("FUND WITHDRAWAL")}>
-            Withdrawal <br />
-            <span style={{ color: "#105614", fontWeight: "700" }}>
-              ${userData?.withdrawal || 0}
-            </span>
-          </div>
-        </div>
-
-        <div className="flowchart-node flowchart-orange" onClick={() => goToPage("ALL")}>
-          Company Profit <br />
-          <span style={{ color: "#105614", fontWeight: "700" }}>
-            ${userData?.GlobalRoyaltyIncon || 0}
-          </span>
-        </div>
-      </div>
-    </div>
-  );
+    );
 };
 
 export default Income;

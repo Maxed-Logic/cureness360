@@ -1,12 +1,14 @@
 import axios from "axios";
-import toast from "react-hot-toast"; // Add this import
+import toast from "react-hot-toast"; 
 
 const apiClient = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL,
-  maxBodyLength: Infinity,
+   maxBodyLength: Infinity,
   headers: { 
     'Content-Type': 'application/json',
+    'Accept': 'application/json',
   },
+  timeout: 30000,
 });
 
 // Request interceptor to add token

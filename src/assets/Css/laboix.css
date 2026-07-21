@@ -3424,6 +3424,7 @@ h6 {
 .main-header--two .main-menu .main-menu__list > li > a {
   color: var(--laboix-white, #fff);
 }
+
 .main-header--two .main-header__right__info {
   border-left: 0px solid var(--laboix-border-color, #DBDBDB);
   margin-left: 0px;
@@ -3682,7 +3683,7 @@ h6 {
 }
 .main-menu .main-menu__list > li.current > a,
 .main-menu .main-menu__list > li:hover > a {
-  color: var(--laboix-secondary, #0EBD66);
+  color: #007bff;
   text-shadow: 0 0 0.5px currentColor;
 }
 /*--------------------------------------------------------------

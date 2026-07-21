@@ -179,7 +179,7 @@ const Stake = () => {
             </span>
           </div>
           <p style={{ margin: "12px 0", fontSize: "14px", color: "#4b5563", textAlign: "center" }}>
-            A deduction of <strong className="amount-highlight">$100.00</strong> will be made for <br />
+            A deduction of <strong className="amount-highlight currency1">$100.00</strong> will be made for <br />
             <span className="username-highlight">{userName}'s Account Activation</span>.
           </p>
         </>

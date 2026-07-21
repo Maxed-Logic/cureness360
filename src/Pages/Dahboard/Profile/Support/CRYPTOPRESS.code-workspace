@@ -1,0 +1,19 @@
+{
+	"folders": [
+		{
+			"name": "CRYPTOPRESS",
+			"path": "../../../../../.."
+		},
+		{
+			"name": "refprodash",
+			"path": "../../../../../../../refprodash"
+		},
+		{
+			"name": "Maxedlogic",
+			"path": "../../../../../../../Maxedlogic"
+		}
+	],
+	"settings": {
+		"liveServer.settings.multiRootWorkspaceName": "refprodash"
+	}
+}

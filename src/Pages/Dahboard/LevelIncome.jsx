@@ -156,7 +156,7 @@ const regno = localStorage.getItem("regno");
                                 Business
                               </button>
                               <div>
-                                <svg className="lines" viewBox="0 0 500 420">
+                                <svg className="lines">
                                   <line x1="140" y1="200" x2="400" y2="95" />
                                   <line x1="140" y1="200" x2="400" y2="150" />
                                   <line x1="140" y1="200" x2="400" y2="205" />

@@ -10,14 +10,92 @@ import {
 import { useUser } from "../../context/UserContext";
 import { MdAccountBalance } from "react-icons/md";
 
+// Currency Configuration
+const currencyRates = {
+    USD: 1,
+    INR: 90,
+    EUR: 0.92,
+    GBP: 0.78
+};
+
+const currencySymbols = {
+    USD: "$",
+    INR: "₹",
+    EUR: "€",
+    GBP: "£"
+};
+
 const ProUserCard = () => {
   const { userData } = useUser();
   const [copied, setCopied] = useState(false);
+
+  // Currency State
+  const [selectedCurrency, setSelectedCurrency] = useState(() => {
+    return localStorage.getItem("selectedCurrency") || "USD";
+  });
 
   const baseUrl = "https://invest.mangowealthplanner.com/";
   const referralLink = userData?.me
     ? `${baseUrl}signup?ref=${userData.me}`
     : baseUrl;
+
+  // Function to format currency
+  const formatCurrency = (amount) => {
+    if (!amount && amount !== 0) return `${currencySymbols[selectedCurrency]}0.00`;
+    const converted = amount * currencyRates[selectedCurrency];
+    return `${currencySymbols[selectedCurrency]}${converted.toLocaleString(undefined, {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    })}`;
+  };
+
+  // Function to update all currency elements
+  const changeCurrency = (currency) => {
+    localStorage.setItem("selectedCurrency", currency);
+    
+    document.querySelectorAll(".currency1").forEach(function(el) {
+      let amount = parseFloat(el.getAttribute("data-value"));
+      
+      if (isNaN(amount)) {
+        let text = el.innerText;
+        let match = text.match(/(\d+(?:\.\d+)?)/);
+        amount = match ? parseFloat(match[1]) : 0;
+      }
+      
+      if (!isNaN(amount)) {
+        let converted = amount * currencyRates[currency];
+        el.innerHTML = currencySymbols[currency] + converted.toLocaleString(undefined, {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        });
+      }
+    });
+  };
+
+  // Listen for currency changes from Header
+  useEffect(() => {
+    const handleCurrencyChange = () => {
+      let newCurrency = localStorage.getItem("selectedCurrency") || "USD";
+      setSelectedCurrency(newCurrency);
+      changeCurrency(newCurrency);
+    };
+
+    window.addEventListener('currencyChanged', handleCurrencyChange);
+    
+    return () => {
+      window.removeEventListener('currencyChanged', handleCurrencyChange);
+    };
+  }, []);
+
+  // Initialize currency on mount
+  useEffect(() => {
+    let savedCurrency = localStorage.getItem("selectedCurrency") || "USD";
+    setSelectedCurrency(savedCurrency);
+    
+    setTimeout(() => {
+      changeCurrency(savedCurrency);
+    }, 100);
+  }, [userData]);
 
   // Copy referral link to clipboard
   const handleCopy = () => {
@@ -26,22 +104,6 @@ const ProUserCard = () => {
     setTimeout(() => setCopied(false), 2000);
   };
 
-// Add this useEffect inside the Signup component, after the existing state declarations
-// Add this new useEffect inside the Signup component, after the existing handleChange function
-useEffect(() => {
-  // Get the 'ref' parameter from the current URL
-  const params = new URLSearchParams(window.location.search);
-  const refCode = params.get("ref");
-
-  // If a referral code exists and the sponsor ID field is empty, auto-fill it
-  if (refCode && !FormData.referrer_Id) {
-    setFormData(prev => ({
-      ...prev,
-      referrer_Id: refCode,
-      introRegNo: refCode // Also set the introRegNo field if needed
-    }));
-  }
-}, []); // This effect runs only once when the component first loads
   return (
     <div className="pro-card">
       {/* ========== TOP BAR ========== */}
@@ -61,7 +123,9 @@ useEffect(() => {
         <FaWallet className="mt-2" />
         <div>
           <span>Total Wallet Balance</span>
-          <div className="card-Balance">$ {userData?.Depositfund || 0}</div>
+          <div className="card-Balance currency1" data-value={userData?.Depositfund || 0}>
+            {formatCurrency(userData?.Depositfund || 0)}
+          </div>
         </div>
       </div>
 

@@ -45,7 +45,6 @@ const SupportHelp = () => {
       toast.error("Ticket ID not found. Please go back and select a ticket.");
       return;
     }
-
     const formData = new FormData();
     formData.append('From', parseInt(regno));
     formData.append('Subject', ticket?.subject);
