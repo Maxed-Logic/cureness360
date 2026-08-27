@@ -1,28 +1,28 @@
 import { Route, Routes } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import Index from './Index';
 import ErrorPage from './components/error/ErrorPage';
 import { Toaster } from "react-hot-toast";
-import Main from './Pages/Dahboard/Main';
+import Approutes from './Routes/Approutes';
 import Signup from './Pages/Auth/Signup';
 import Login from './Pages/Auth/Login';
 import ProtecedRoute from "./components/route/ProtecedRoute";
 import { UserProvider } from './context/UserContext';
 import Preloader from './Preloader';
 import ForgotPassword from './Pages/Auth/ForgotPassword';
-import Header from './components/ui/Header/Header';
-import Fotter from './components/ui/fotter/Fotter';
+import Header from './components/common/Header/Header';
+import Fotter from './components/common/fotter/Fotter';
 import { Outlet } from 'react-router-dom';
+import Landinglayout from './layout/Landinglayout';
 
 // Layout Component with Header, Footer and Outlet (for normal pages)
 const Layout = () => {
   return (
     <>
-      <Header />
+      <Header/>
       <div className="midd-container">
         <Outlet />
       </div>
-      <Fotter />
+      <Fotter/>
     </>
   );
 };
@@ -57,7 +57,7 @@ function AppContent() {
       <Routes>
         {/* Normal pages with Header & Footer */}
         <Route element={<Layout />}>
-          <Route path="/" element={<Index />} />
+          <Route path="/" element={<Landinglayout />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/forgotpassword" element={<ForgotPassword />} />
@@ -68,7 +68,7 @@ function AppContent() {
         <Route element={<DashboardLayout />}>
           <Route path="/dashboard/*" element={
             <ProtecedRoute>
-              <Main />
+              <Approutes/>
             </ProtecedRoute>
           } />
         </Route>

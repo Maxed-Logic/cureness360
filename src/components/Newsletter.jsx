@@ -17,7 +17,7 @@ const Customer = () => {
                 </div>
                 <div className="subscribe-title">
                   <h1 className="cursor-scale small mb-3">
-                    Mango Wealth Planner Experience.
+                    Cureness Experience.
                   </h1>
                 </div>
               </div>
@@ -29,7 +29,7 @@ const Customer = () => {
                 </div>
 
               <div className="mediic-btn text-right cursor-scale small" style={{ width: "10px",}}>
-     <a href="mailto:healthcare@mangowealthplanner.com">
+     <a href="mailto:healthcare@Cureness360.com">
     <span className="mediic-btn__hover"></span>
     <span className="mediic-btn__hover"></span>
     <span className="mediic-btn__hover"></span>
@@ -37,7 +37,7 @@ const Customer = () => {
     <span className="mediic-btn__hover"></span>
     <span className="mediic-btn__hover"></span>
     <span style={{fontSize: "10px"}}>
-    healthcare@mangowealthplanner.com
+    healthcare@Cureness360.com
     </span>
   </a>
 </div>

@@ -1,0 +1,13 @@
+{
+	"folders": [
+		{
+			"path": "../../../../.."
+		},
+		{
+			"path": "../../../../../../TonBotUI"
+		}
+	],
+	"settings": {
+		"liveServer.settings.multiRootWorkspaceName": "CRYPTOPRESS"
+	}
+}

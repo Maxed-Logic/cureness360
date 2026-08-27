@@ -1934,7 +1934,7 @@ ul.testi-rating li {
   top: 0;
   width: 0;
   height: 100%;
-  /* background: url(../images/resource/doctor-set.png); */
+
   background-repeat: no-repeat;
   background-position: right;
   animation: moveLeftBounce 8s linear infinite;
@@ -8722,3 +8722,5 @@ box-shadow: 10px 10px 5px 0px rgba(0,0,0,0.1);
  
 }
 }
+
+

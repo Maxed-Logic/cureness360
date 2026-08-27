@@ -23,7 +23,7 @@ const currencySymbols = {
 
 const CapitalPayout = () => {
     const { userData, loading: userLoading } = useUser();
-    const regno = userData?.Regno || userData?.regno || userData?.regNo || localStorage.getItem("regno");
+    const regno = userData?.Regno || userData?.regno || userData?.regNo || sessionStorage.getItem("regno");
 
     const [records, setRecords] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -33,7 +33,7 @@ const CapitalPayout = () => {
 
     // Currency State
     const [selectedCurrency, setSelectedCurrency] = useState(() => {
-        return localStorage.getItem("selectedCurrency") || "USD";
+        return sessionStorage.getItem("selectedCurrency") || "USD";
     });
 
     // Format currency function
@@ -48,7 +48,7 @@ const CapitalPayout = () => {
 
     // Update all currency elements
     const changeCurrency = (currency) => {
-        localStorage.setItem("selectedCurrency", currency);
+        sessionStorage.setItem("selectedCurrency", currency);
         document.querySelectorAll(".currency1").forEach(function (el) {
             let amount = parseFloat(el.getAttribute("data-value"));
             if (isNaN(amount)) {
@@ -69,7 +69,7 @@ const CapitalPayout = () => {
     // Listen for currency changes from Header
     useEffect(() => {
         const handleCurrencyChange = () => {
-            let newCurrency = localStorage.getItem("selectedCurrency") || "USD";
+            let newCurrency = sessionStorage.getItem("selectedCurrency") || "USD";
             setSelectedCurrency(newCurrency);
             changeCurrency(newCurrency);
         };
@@ -79,7 +79,7 @@ const CapitalPayout = () => {
 
     // Initialize currency on mount
     useEffect(() => {
-        let savedCurrency = localStorage.getItem("selectedCurrency") || "USD";
+        let savedCurrency = sessionStorage.getItem("selectedCurrency") || "USD";
         setSelectedCurrency(savedCurrency);
         setTimeout(() => changeCurrency(savedCurrency), 100);
     }, []);
@@ -91,7 +91,6 @@ const CapitalPayout = () => {
                 setLoading(true);
                 try {
                     const res = await apiClient.get(`/IncomePayout/capital-payout-status/${regno}`);
-                    console.log("api", res);
                     if (res.data?.success && res.data?.response?.data) {
                         const mapped = res.data.response.data.map((item, idx) => ({
                             id: item.Rid || idx,

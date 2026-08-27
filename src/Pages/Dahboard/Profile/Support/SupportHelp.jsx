@@ -11,7 +11,7 @@ const SupportHelp = () => {
   const ticket = location.state?.ticket;
   const navigate = useNavigate();
 
-  const getRegNo = () => localStorage.getItem('regno');
+  const getRegNo = () => sessionStorage.getItem('regno');
 
   const nextIdRef = useRef(1);
   const [messages, setMessages] = useState([]);

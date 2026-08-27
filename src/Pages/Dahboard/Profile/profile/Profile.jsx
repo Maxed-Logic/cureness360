@@ -11,53 +11,49 @@ import toast from "react-hot-toast";
 import "./Profile.css";
 
 const ProfilePage = () => {
-  const { userData, user, updateUserData } = useUser();
-  const [showMasterPassword, setShowMasterPassword] = useState(false);
-  const [showUpdatePassword, setShowUpdatePassword] = useState(false);
+  const { userData, user, updateUserData, refreshData } = useUser();
   const [saveStatus, setSaveStatus] = useState("");
   const [loading, setLoading] = useState(true);
   const [copySuccess, setCopySuccess] = useState("");
   const [isUpdatingPersonal, setIsUpdatingPersonal] = useState(false);
   const [isUpdatingBank, setIsUpdatingBank] = useState(false);
 
+  // Password visibility states
+  const [showPersonalPassword, setShowPersonalPassword] = useState(false);
+  const [showBankPassword, setShowBankPassword] = useState(false);
+
   const [formData, setFormData] = useState({
     loginId: "",
     fullName: "",
     emailId: "",
     mobileNumber: "",
+    regNo: "", // ✅ ADDED - MISSING THA
     masterPassword: "",
-    bep20Wallet: "",
+    wallwtaddresh: "",
     accountHolderName: "",
     bankName: "",
     ifscCode: "",
     accountNumber: "",
-    updateMasterPassword: "",
-    upiNumber: ""
+    bankMasterPassword: ""
   });
 
+  // LOAD DATA DIRECTLY FROM userData (API se)
   useEffect(() => {
     if (userData) {
-      // Load saved bank details from localStorage
-      const savedAccountNumber = localStorage.getItem("accountNumber") || "";
-      const savedBep20Wallet = localStorage.getItem("bep20Wallet") || "";
-      const savedAccountHolderName = localStorage.getItem("accountHolderName") || "";
-      const savedBankName = localStorage.getItem("bankName") || "";
-      const savedIfscCode = localStorage.getItem("ifscCode") || "";
-      const savedMasterPassword = localStorage.getItem("masterPassword") || "";
-
+      console.log("📊 User Data:", userData);
+      
       setFormData(prev => ({
         ...prev,
-        loginId: userData?.me,
-        fullName: userData?.name,
-        emailId: userData?.email,
-        mobileNumber: userData?.MobileNo,
-        regNo: userData?.regno,
-        accountNumber: savedAccountNumber,
-        bep20Wallet: savedBep20Wallet,
-        accountHolderName: savedAccountHolderName,
-        bankName: savedBankName,
-        ifscCode: savedIfscCode,
-        masterPassword: savedMasterPassword
+        loginId: userData?.loginid || userData?.LoginID || userData?.me || "",
+        fullName: userData?.fName || userData?.Name || userData?.name || "",
+        emailId: userData?.emailID || userData?.email || userData?.emailId || "",
+        mobileNumber: userData?.mobile || userData?.MobileNo || userData?.mobileNumber || "",
+        regNo: userData?.regNo || userData?.regno || userData?.RegNo || "",
+        wallwtaddresh: userData?.accountNo || "",
+        accountNumber: userData?.upiNumber || "",
+        accountHolderName: userData?.NameOnAccount ,
+        bankName: userData?.bankName || "",
+        ifscCode: userData?.ifsccode || userData?.ifscCode || ""
       }));    
       setLoading(false);
     }  
@@ -80,9 +76,6 @@ const ProfilePage = () => {
       });
             
       if (response.data?.success) {
-        // Remove this toast - only setSaveStatus will handle it
-        // toast.success(response.data?.message);
-
         if (updateUserData) {
           updateUserData({
             name: profileData.fullName,
@@ -90,7 +83,7 @@ const ProfilePage = () => {
             mobile: profileData.mobileNumber
           });
         }
-               
+        setFormData(prev => ({ ...prev, masterPassword: "" }));
         return true;
       } else {
         toast.error(response.data?.message || "Failed to update profile");
@@ -103,113 +96,122 @@ const ProfilePage = () => {
     }
   };
 
-  // API call to update bank details
+  // ✅ API call to update bank details - FIXED
   const updateBankDetailsAPI = async (bankData) => {
     try {
-      const response = await apiClient.post('/User/update-details', {
+      const payload = {
         regNo: parseInt(bankData.regNo) || parseInt(userData?.regno),
-        accountNo: bankData.accountNumber,
+        accountNo: bankData.wallwtaddresh, // ✅ FORM SE WALLET ADDRESS
         accountHolderName: bankData.accountHolderName,
         bankName: bankData.bankName,
         ifscCode: bankData.ifscCode,
-        upiNumber: bankData.upiNumber || "",
-        masterPasword: bankData.updateMasterPassword || ""
-      });
+        wallwtaddresh: bankData.wallwtaddresh, // ✅ FORM SE
+        upiNumber: bankData.accountNumber, // ✅ FORM SE ACCOUNT NUMBER
+        masterPasword: formData.bankMasterPassword,
+      };
+
+      console.log("📤 Sending Bank Data:", payload);
+
+      const response = await apiClient.post('/User/update-details', payload);
+      
+      console.log("📥 API Response:", response.data);
       
       if (response.data?.success) {
-        // Remove this toast - only setSaveStatus will handle it
-        // toast.success(response.data?.message || "Bank details updated successfully!");
+        // toast.success("Bank details updated successfully!");
         return true;
       } else {
         toast.error(response.data?.message || "Failed to update bank details");
         return false;
       }
     } catch (error) {
-      console.error("Bank details update error:", error);
-      toast.error(error.response?.data?.message || "Error updating bank details. Please try again.");
+      console.error("❌ Bank details update error:", error);
+      console.error("❌ Error Response:", error.response?.data);
+      
+      if (error.response?.data?.message) {
+        toast.error(error.response.data.message);
+      } else if (error.response?.data?.errors) {
+        const errors = Object.values(error.response.data.errors).flat();
+        toast.error(errors[0] || "Validation error");
+      } else {
+        toast.error("Error updating bank details. Please try again.");
+      }
       return false;
     }
   };
 
-  // Separate handler for Personal Details section
+  // Personal Details Submit Handler
   const handlePersonalSubmit = async (e) => {
     e.preventDefault();
     
     if (isUpdatingPersonal) return;
+    
+    if (!formData.masterPassword || formData.masterPassword.length < 4) {
+      toast.error("Please enter your Master Password (minimum 4 characters)");
+      return;
+    }
+    
     setIsUpdatingPersonal(true);
     
     try {
-      // Prepare data for API update
       const profileUpdateData = {
         fullName: formData.fullName,
         emailId: formData.emailId,
         mobileNumber: formData.mobileNumber,
-        regNo: userData?.regno || user?.regno || userData?.RegNo
+        regNo: formData.regNo || userData?.regno || user?.regno
       };
       
-      // Update profile via API
       const apiSuccess = await updateProfileAPI(profileUpdateData);
       
       if (apiSuccess) {
-        setSaveStatus("✓ Profile updated successfully!");
+        setSaveStatus("Profile updated successfully!");
         setTimeout(() => setSaveStatus(""), 3000);
+        await refreshData();
+        setFormData(prev => ({ ...prev, masterPassword: "" }));
       }
     } finally {
-      // Add delay to prevent multiple clicks
       setTimeout(() => {
         setIsUpdatingPersonal(false);
       }, 2000);
     }
   };
 
-  // Separate handler for Bank & Password section
+  // Bank Details Submit Handler - FIXED
   const handleBankSubmit = async (e) => {
     e.preventDefault();
     
     if (isUpdatingBank) return;
+    
+    if (!formData.bankMasterPassword || formData.bankMasterPassword.length < 4) {
+      toast.error("Please enter your Master Password (minimum 4 characters)");
+      return;
+    }
+    
     setIsUpdatingBank(true);
     
     try {
-      // Prepare bank data for API
       const bankData = {
-        accountNumber: formData.accountNumber,
+        accountNumber: formData.accountNumber, // ✅ Form se
         accountHolderName: formData.accountHolderName,
         bankName: formData.bankName,
         ifscCode: formData.ifscCode,
-        upiNumber: formData.upiNumber,
-        updateMasterPassword: formData.updateMasterPassword,
-        regNo: userData?.regno || user?.regno || userData?.RegNo
+        wallwtaddresh: formData.wallwtaddresh, // ✅ ✅ ✅ FIX: Form se lo
+        regNo: formData.regNo || userData?.regno || user?.regno
       };
       
-      // Update bank details via API
+      console.log("📤 Bank Data being sent:", bankData);
+      
       const apiSuccess = await updateBankDetailsAPI(bankData);
       
       if (apiSuccess) {
-        // Save bank details to localStorage as backup
-        localStorage.setItem("accountNumber", formData.accountNumber);
-        localStorage.setItem("bep20Wallet", formData.bep20Wallet);
-        localStorage.setItem("accountHolderName", formData.accountHolderName);
-        localStorage.setItem("bankName", formData.bankName);
-        localStorage.setItem("ifscCode", formData.ifscCode);
-        localStorage.setItem("upiNumber", formData.upiNumber);
-        
-        // Update master password if provided
-        if (formData.updateMasterPassword) {
-          localStorage.setItem("masterPassword", formData.updateMasterPassword);
-          setFormData(prev => ({ 
-            ...prev, 
-            masterPassword: formData.updateMasterPassword, 
-            updateMasterPassword: "" 
-          }));
-          setSaveStatus("✓ Bank details and master password updated successfully!");
-        } else {
-          setSaveStatus("✓ Bank details updated successfully!");
-        }
-        
+        setSaveStatus("Bank details updated successfully!");
         setTimeout(() => setSaveStatus(""), 3000);
+        await refreshData();
+        setFormData(prev => ({ ...prev, bankMasterPassword: "" }));
       }
+    } catch (error) {
+      console.error("Error in bank submit:", error);
+      toast.error("Failed to update bank details");
     } finally {
-      // Add delay to prevent multiple clicks
       setTimeout(() => {
         setIsUpdatingBank(false);
       }, 2000);
@@ -217,9 +219,13 @@ const ProfilePage = () => {
   };
 
   const handleCopyWallet = () => {
-    navigator.clipboard.writeText(formData.bep20Wallet);
-    setCopySuccess("Copied!");
-    setTimeout(() => setCopySuccess(""), 2000);
+    if (formData.wallwtaddresh) { // ✅ formData se check karo
+      navigator.clipboard.writeText(formData.wallwtaddresh);
+      setCopySuccess("Copied!");
+      setTimeout(() => setCopySuccess(""), 2000);
+    } else {
+      toast.error("No wallet address to copy!");
+    }
   };
 
   if (loading) {
@@ -294,7 +300,7 @@ const ProfilePage = () => {
                 <div className="Personal-Details">Personal Details</div>
               </div>
               
-              <div className="card-body">
+              <div className="card-body p-3">
                 <div className="form-group">
                   <label className="text"><FaUser className="input-icon" />Login ID</label>
                   <input 
@@ -344,25 +350,36 @@ const ProfilePage = () => {
                 </div>
 
                 <div className="form-group">
-                  <label className="text"><FaLock className="input-icon" /> Enter Login Password</label>
+                  <label className="text">
+                    <FaLock className="input-icon" /> Master Password <span style={{ color: 'red' }}>*</span>
+                  </label>
                   <div className="password-wrapper">
                     <input 
-                      type={showMasterPassword ? "text" : "password"} 
+                      type={showPersonalPassword ? "text" : "password"} 
                       name="masterPassword" 
                       value={formData.masterPassword} 
                       onChange={handleChange} 
-                      placeholder="Enter Login Password" 
+                      placeholder="Enter Master Password" 
+                      required
                     />
-                    <button type="button" className="password-toggle" onClick={() => setShowMasterPassword(!showMasterPassword)}>
-                      {showMasterPassword ? <FaEyeSlash /> : <FaEye />}
-                    </button>    
-                  </div>
-                  <div className="card-actions">
-                    <button type="submit" className="update-btn secondary-btn" disabled={isUpdatingPersonal}>
-                      <FaSave className="btn-icon" /> 
-                      {isUpdatingPersonal ? "UPDATING..." : "UPDATE PROFILE"}
+                    <button 
+                      type="button" 
+                      className="password-toggle" 
+                      onClick={() => setShowPersonalPassword(!showPersonalPassword)}
+                    >
+                      {showPersonalPassword ? <FaEyeSlash /> : <FaEye />}
                     </button>
                   </div>
+                </div>
+
+                <div className="card-actions">
+                  <button 
+                    type="submit" 
+                    className="btn btn-primary update-btn" 
+                    disabled={isUpdatingPersonal}
+                  >
+                    {isUpdatingPersonal ? " UPDATING..." : " UPDATE PROFILE"}
+                  </button>
                 </div>
               </div>
             </form>
@@ -376,16 +393,20 @@ const ProfilePage = () => {
                 <div className="Personal-Details">Bank Account Details</div>
               </div>
               
-              <div className="card-body">
+              <div className="card-body p-3">
+                {/* BEP20 Wallet Address */}
                 <div className="form-group wallet-group">
-                  <label className="text"><FaWallet className="input-icon" /> BEP20 Wallet Address</label>
+                  <label className="text">
+                    <FaWallet className="input-icon" /> BEP20 Wallet Address
+                  </label>
                   <div className="wallet-input-wrapper">
                     <input 
                       type="text" 
-                      name="bep20Wallet" 
-                      value={formData.bep20Wallet} 
+                      name="wallwtaddresh" 
+                      value={formData.wallwtaddresh} 
                       onChange={handleChange} 
-                      placeholder="0x..." 
+                      placeholder="0x... Enter BEP20 Wallet Address" 
+                      className="wallet-input-field"
                     />
                     <button type="button" className="copy-wallet-btn" onClick={handleCopyWallet} title="Copy address">
                       <FaCopy />
@@ -432,38 +453,49 @@ const ProfilePage = () => {
                   </div>
                 </div>
 
-
                 <div className="form-group">
-                  <label className="text" required><FaWallet className="input-icon" /> Account Number</label>
+                  <label className="text"><FaWallet className="input-icon" /> Account / UPI Number</label>
                   <input 
                     type="text" 
                     name="accountNumber" 
                     value={formData.accountNumber} 
                     onChange={handleChange} 
-                    placeholder="Enter Account Number" 
+                    placeholder="Enter Account / UPI Number" 
+                    required
                   />
                 </div>
 
+                {/* MASTER PASSWORD - Bank Form */}
                 <div className="form-group">
-                  <label className="text"><FaLock className="input-icon" /> Update Master Password</label>
+                  <label className="text">
+                    <FaLock className="input-icon" /> Master Password <span style={{ color: 'red' }}>*</span>
+                  </label>
                   <div className="password-wrapper">
                     <input 
-                      type={showUpdatePassword ? "text" : "password"} 
-                      name="updateMasterPassword" 
-                      value={formData.updateMasterPassword} 
+                      type={showBankPassword ? "text" : "password"} 
+                      name="bankMasterPassword" 
+                      value={formData.bankMasterPassword} 
                       onChange={handleChange} 
-                      placeholder="Enter New Master Password" 
+                      placeholder="Enter Master Password" 
+                      required
                     />
-                    <button type="button" className="password-toggle" onClick={() => setShowUpdatePassword(!showUpdatePassword)}>
-                      {showUpdatePassword ? <FaEyeSlash /> : <FaEye />}
+                    <button 
+                      type="button" 
+                      className="password-toggle" 
+                      onClick={() => setShowBankPassword(!showBankPassword)}
+                    >
+                      {showBankPassword ? <FaEyeSlash /> : <FaEye />}
                     </button>
                   </div>
                 </div>
 
                 <div className="card-actions">
-                  <button type="submit" className="update-btn secondary-btn" disabled={isUpdatingBank}>
-                    <FaSave id="text" className="btn-icon" /> 
-                    {isUpdatingBank ? "UPDATING..." : "UPDATE PROFILE"}
+                  <button 
+                    type="submit" 
+                    className="btn btn-primary update-btn" 
+                    disabled={isUpdatingBank}
+                  >
+                    {isUpdatingBank ? " UPDATING..." : " UPDATE BANK DETAILS"}
                   </button>
                 </div>
               </div>

@@ -6,7 +6,7 @@ const UserContext = createContext();
 export const UserProvider = ({ children }) => {
 
   const [user, setUser] = useState(() => {
-    const storedUser = localStorage.getItem("user");
+    const storedUser = sessionStorage.getItem("user");
     return storedUser ? JSON.parse(storedUser) : null;
   });
 
@@ -15,13 +15,12 @@ export const UserProvider = ({ children }) => {
   const [payoutData, setPayoutData] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  // ================= LOAD FROM LOCALSTORAGE =================
+  // ================= LOAD FROM sessionStorage =================
   useEffect(() => {
-    const savedUserData = localStorage.getItem("userData");
+    const savedUserData = sessionStorage.getItem("userData");
     if (savedUserData) {
       try {
         const parsed = JSON.parse(savedUserData);
-        console.log("Loaded from localStorage:", parsed);
         setUserData(parsed);
       } catch (e) {
         console.error("Error loading:", e);
@@ -32,44 +31,50 @@ export const UserProvider = ({ children }) => {
   // ================= Dashboard Fetch =================
   const fetchData = async () => {
     try {
-      const token = localStorage.getItem("token");
-      if (!user || !token) return;
+      const token = sessionStorage.getItem("token");
+      if (!user && !token) {
+        const storedUser = sessionStorage.getItem("user");
+        if (!storedUser) return;
+      }
       
-      const regno = user.Regno || user.regno || localStorage.getItem("regno");
-      if (!regno) return;
+      const regno = user?.Regno || user?.regno || sessionStorage.getItem("regno");
+      if (!regno) {
+        console.warn("No regno found");
+        return;
+      }
 
+      setLoading(true);
       const res = await apiClient.get(
         `/Dashboard/dashboard/${regno}`,
         {
           headers: {
-            Authorization: `Bearer ${token}`
+            Authorization: `Bearer ${sessionStorage.getItem("token")}`
           }
         }
       );
-      console.log("Dashboard-Api", res)
+      console.log("Dashboard Data:", res.data);
       
       if (res.data.success) {
         const apiData = res.data.data;
         const newUserData = {
-          regno: apiData.Regno || apiData.regno,
+          regno: apiData.regNo,
           name: apiData.fname,
           me: apiData.loginid,
           MobileNo: apiData.mobile,
           referral: apiData.introid,
           kid: apiData.kid,
-          Depositfund: apiData.topupwallet,
-          BotAmount: apiData.BotAmount,
-          Invest: apiData.Invest,
-          totalWallet: apiData.totalWallet,
-          walletid: apiData.walletid,
-          LevelIncome: apiData.LevelIncome,
-          MatchingBonus: apiData.MatchingBonus,
-          IBIncome: apiData.IBIncome,
-          Reward: apiData.Reward,
-          RoyaltyIncome: apiData.RoyaltyIncome,
-          Remaining: apiData.Remaining,
-          withdrawal: apiData.withdrawal,
-          TradingPassiveIncome: apiData.TradingPassiveIncome,
+          Depositfund: apiData.topupwallet || 0,
+          BotAmount: apiData.BotAmount || 0,
+          totalWallet: apiData.totalWallet || 0,
+          walletid: apiData.accountNo,
+          LevelIncome: apiData.LevelIncome || 0,
+          MatchingBonus: apiData.MatchingBonus || 0,
+          IBIncome: apiData.IBIncome || 0,
+          Reward: apiData.Reward || 0,
+          RoyaltyIncome: apiData.RoyaltyIncome || 0,
+          Remaining: apiData.Remaining || 0,
+          withdrawal: apiData.withdrawal || 0,
+          TradingPassiveIncome: apiData.TradingPassiveIncome || 0,
           email: apiData.emailID,
           directId: apiData.directId,
           strongLeg: apiData.OtherLeg,
@@ -80,131 +85,93 @@ export const UserProvider = ({ children }) => {
           RightPerMonth: apiData.RightPerMonth,
           LeftBusiness: apiData.LeftBusiness,
           RightBusiness: apiData.RightBusiness,
-          topupdate: apiData.topupdate,
-          Working: apiData.Working,
+          topupdate: apiData.topupdate,        
           MiningTeamBusiness: apiData.MiningTeamBusiness,
           topupwallet: apiData.topupwallet,
+          kycstatus: apiData.kycstatus,
+          userPayoutOnOff: apiData.userPayoutOnOff,
+          teamIdPayoutOnOff: apiData.teamIdPayoutOnOff,
+          payoutOnOffByAdmin: apiData.payoutOnOffByAdmin,
+          Smart_Wallet: apiData.Smart_Wallet || 0,
+          Working: apiData.Working || 0,
+          Invest: apiData.Invest || 0,
+          BotStatus: apiData.BotStatus || 0,
+          Smart_Wallet_debit: apiData.Smart_Wallet_debit,
+          accountNo: apiData.accountNo,
+          ifsccode: apiData.ifsccode,
+          bankName: apiData.bankName,
+          upiNumber: apiData.upiNumber,
+          NameOnAccount: apiData.NameOnAccount,
+          teamcount: apiData.teamcount,
+          activeteam: apiData.activeteam,
+          inactiveteam: apiData.inactiveteam,
+
         };
          
         setUserData(newUserData);
-        localStorage.setItem("userData", JSON.stringify(newUserData));
+        sessionStorage.setItem("userData", JSON.stringify(newUserData));
+        return newUserData;
+      } else {
+        console.warn("API returned success: false");
+        return null;
       }
     } catch (error) {
       console.error("Dashboard Fetch Error:", error);
+      return null;
+    } finally {
+      setLoading(false);
     }
   };
 
-  // ================= INVEST NOW (With Separate APIs & API Message Support) =================
+  // ================= FORCE REFRESH WITH CACHE CLEAR =================
+  const forceRefresh = async () => {
+    sessionStorage.removeItem("userData");
+    const freshData = await fetchData();
+    if (!freshData) {
+      const savedData = sessionStorage.getItem("userData");
+      if (savedData) {
+        const parsed = JSON.parse(savedData);
+        setUserData(parsed);
+        return parsed;
+      }
+    }
+    return freshData;
+  };
+
+  // ✅ NEW: Sirf userData update karo - Page refresh nahi
+  const updateUserData = (updatedData) => {
+    setUserData(updatedData);
+    sessionStorage.setItem("userData", JSON.stringify(updatedData));
+  };
+
+  // ================= INVEST NOW =================
   const investNow = async (reciveId, investAmount) => {
-    console.log("=== INVEST NOW CALLED ===");
-    console.log("reciveId:", reciveId);
-    console.log("investAmount:", investAmount);
-    
     if (!userData) {
       return { success: false, message: "User data not loaded" };
     }
     
     const amount = parseFloat(investAmount);
-    let updatedData;
-    let apiEndpoint;
-    let apiBody;
-    let apiMessage = "";
-    let isSuccess = false;
+    const oldDeposit = parseFloat(userData.Depositfund || 0);
+    const newDepositfund = oldDeposit - amount;
     
-    const token = localStorage.getItem("token");
-    const regno = user?.Regno || user?.regno || localStorage.getItem("regno");
+    const updatedData = {
+      ...userData,
+      Depositfund: newDepositfund
+    };
     
-    // 🔥 SELF TRANSFER (Income → Deposit) - Use fund-transfer API
-    if (reciveId === userData?.me) {
-      console.log("💰 SELF TRANSFER - Using fund-transfer API");
-      
-      const oldTotalWallet = parseFloat(userData.totalWallet || 0);
-      const oldDeposit = parseFloat(userData.Depositfund || 0);
-      const newTotalWallet = oldTotalWallet - amount;
-      const newDepositfund = oldDeposit + amount;
-      
-      updatedData = {
-        ...userData,
-        totalWallet: newTotalWallet,
-        Depositfund: newDepositfund
-      };
-      
-      apiEndpoint = `/IncomePayout/fund-transfer`;
-      apiBody = {
-        regno: Number(regno),
-        reciveId: userData.me,  
-        amount: amount
-      };
-    } 
-    // 🔥 P2P TRANSFER (Deposit → Deposit) - Use deposit-to-deposit API
-    else {
-      console.log("💰 P2P TRANSFER - Using deposit-to-deposit API");
-      
-      const oldDeposit = parseFloat(userData.Depositfund || 0);
-      const newDepositfund = oldDeposit - amount;
-      
-      updatedData = {
-        ...userData,
-        Depositfund: newDepositfund
-      };
-      
-      apiEndpoint = `/IncomePayout/deposit-to-deposit`;
-      apiBody = {
-        regno: Number(regno),
-        reciveId: reciveId,
-        amount: amount
-      };
-    }
-    
-    // ✅ Update UI and localStorage IMMEDIATELY
     setUserData(updatedData);
-    localStorage.setItem("userData", JSON.stringify(updatedData));
+    sessionStorage.setItem("userData", JSON.stringify(updatedData));
     
-    // 🔥 Call API in background
-    try {
-      console.log("Calling API:", apiEndpoint);
-      console.log("Body:", apiBody);
-      
-      const response = await apiClient.post(
-        apiEndpoint,
-        apiBody,
-        {
-          headers: { Authorization: `Bearer ${token}` }
-        }
-      );
-      
-      console.log("API Response:", response.data);
-      
-      // ✅ Extract message from API response
-      if (response.data.success) {
-        isSuccess = true;
-        apiMessage = response.data.message || `Transfer of ${amount} completed successfully!`;
-        console.log("✅ API Success - Database updated:", apiMessage);
-        
-        // Refresh from server to confirm
-        setTimeout(() => fetchData(), 500);
-      } else {
-        isSuccess = false;
-        apiMessage = response.data.message || "Transfer failed. Please try again.";
-        console.log("❌ API Failed:", apiMessage);
-      }
-    } catch (error) {
-      console.error("API Error:", error.response?.data || error);
-      isSuccess = false;
-      apiMessage = error.response?.data?.message || error.message || "Network error. Please check your connection.";
-    }
-    
-    // ✅ Return proper response with API message
     return { 
-      success: isSuccess,
-      message: apiMessage,
+      success: true,
+      message: `$${amount} invested successfully!`,
       amount: amount
     };
   };
 
   // ================= REFRESH USER DATA =================
   const refreshUserData = async () => {
-    const savedData = localStorage.getItem("userData");
+    const savedData = sessionStorage.getItem("userData");
     if (savedData) {
       const parsed = JSON.parse(savedData);
       setUserData(parsed);
@@ -215,9 +182,9 @@ export const UserProvider = ({ children }) => {
 
   // ================= LOGIN =================
   const loginUser = (userData, token) => {
-    localStorage.setItem("user", JSON.stringify(userData));
-    localStorage.setItem("token", token);
-    localStorage.setItem("regno", userData.regno);
+    sessionStorage.setItem("user", JSON.stringify(userData));
+    sessionStorage.setItem("token", token);
+    sessionStorage.setItem("regno", userData.regno);
     setUser(userData);
     setTimeout(() => fetchData(), 100);
   };
@@ -228,10 +195,10 @@ export const UserProvider = ({ children }) => {
     setUserData(null);
     setStakeData(null);
     setPayoutData(null);
-    localStorage.removeItem("user");
-    localStorage.removeItem("token");
-    localStorage.removeItem("regno");
-    localStorage.removeItem("userData");
+    sessionStorage.removeItem("user");
+    sessionStorage.removeItem("token");
+    sessionStorage.removeItem("regno");
+    sessionStorage.removeItem("userData");
   };
 
   useEffect(() => {
@@ -248,7 +215,9 @@ export const UserProvider = ({ children }) => {
         stakeData,
         payoutData,
         refreshData: fetchData,
+        forceRefresh: forceRefresh,
         refreshUserData,
+        updateUserData, // ✅ NEW: Sirf userData update ke liye
         investNow,
         loginUser,
         logoutUser,

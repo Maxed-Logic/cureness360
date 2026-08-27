@@ -31,10 +31,10 @@ const ProUserCard = () => {
 
   // Currency State
   const [selectedCurrency, setSelectedCurrency] = useState(() => {
-    return localStorage.getItem("selectedCurrency") || "USD";
+    return sessionStorage.getItem("selectedCurrency") || "USD";
   });
 
-  const baseUrl = "https://invest.mangowealthplanner.com/";
+  const baseUrl = "https://cureness360.com/";
   const referralLink = userData?.me
     ? `${baseUrl}signup?ref=${userData.me}`
     : baseUrl;
@@ -51,7 +51,7 @@ const ProUserCard = () => {
 
   // Function to update all currency elements
   const changeCurrency = (currency) => {
-    localStorage.setItem("selectedCurrency", currency);
+    sessionStorage.setItem("selectedCurrency", currency);
     
     document.querySelectorAll(".currency1").forEach(function(el) {
       let amount = parseFloat(el.getAttribute("data-value"));
@@ -75,7 +75,7 @@ const ProUserCard = () => {
   // Listen for currency changes from Header
   useEffect(() => {
     const handleCurrencyChange = () => {
-      let newCurrency = localStorage.getItem("selectedCurrency") || "USD";
+      let newCurrency = sessionStorage.getItem("selectedCurrency") || "USD";
       setSelectedCurrency(newCurrency);
       changeCurrency(newCurrency);
     };
@@ -89,7 +89,7 @@ const ProUserCard = () => {
 
   // Initialize currency on mount
   useEffect(() => {
-    let savedCurrency = localStorage.getItem("selectedCurrency") || "USD";
+    let savedCurrency = sessionStorage.getItem("selectedCurrency") || "USD";
     setSelectedCurrency(savedCurrency);
     
     setTimeout(() => {
@@ -97,11 +97,49 @@ const ProUserCard = () => {
     }, 100);
   }, [userData]);
 
-  // Copy referral link to clipboard
-  const handleCopy = () => {
-    navigator.clipboard.writeText(referralLink);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  // FIXED: Copy referral link to clipboard with fallback method
+  const handleCopy = async () => {
+    try {
+      // Try using the modern Clipboard API first
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(referralLink);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      } else {
+        // Fallback method for non-HTTPS or older browsers
+        const textArea = document.createElement("textarea");
+        textArea.value = referralLink;
+        
+        // Make the textarea out of viewport
+        textArea.style.position = "fixed";
+        textArea.style.left = "-999999px";
+        textArea.style.top = "-999999px";
+        document.body.appendChild(textArea);
+        
+        textArea.focus();
+        textArea.select();
+        
+        try {
+          const successful = document.execCommand('copy');
+          if (successful) {
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+          } else {
+            // If copy fails, show the link in an alert
+            alert("Copy this link: " + referralLink);
+          }
+        } catch (err) {
+          console.error('Copy failed:', err);
+          alert("Copy this link: " + referralLink);
+        } finally {
+          document.body.removeChild(textArea);
+        }
+      }
+    } catch (err) {
+      console.error('Copy failed:', err);
+      // Ultimate fallback - show alert with link
+      alert("Copy this link: " + referralLink);
+    }
   };
 
   return (
@@ -146,14 +184,18 @@ const ProUserCard = () => {
         <div className="share-box">
           <p>Share with others</p>
           <div className="social-icons">
-            <span
+          <span
               className="ig"
-              onClick={() => {
-                navigator.clipboard.writeText(referralLink);
-                alert("Link copied! Share on Instagram");
-              }}
+              onClick={() =>
+                window.open(
+                  `https://www.instagram.com/sharer/?u=${encodeURIComponent(
+                    referralLink
+                  )}`,
+                  "_blank"
+                )
+              }
             >
-              <FaInstagram />
+             <FaInstagram />
             </span>
 
             {/* Facebook - opens share dialog */}
@@ -161,7 +203,7 @@ const ProUserCard = () => {
               className="fb"
               onClick={() =>
                 window.open(
-                  `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(
+                  `https://www.facebook.com/#/?u=${encodeURIComponent(
                     referralLink
                   )}`,
                   "_blank"

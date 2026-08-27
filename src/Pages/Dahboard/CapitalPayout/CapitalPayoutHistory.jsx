@@ -23,19 +23,19 @@ const currencySymbols = {
 const CapitalPayoutHistory = () => {
     const { userData, loading: userLoading } = useUser();
 
-    // Helper to get regno from context or localStorage
+    // Helper to get regno from context or sessionStorage
     const getRegNo = () => {
         if (userData?.regno) return userData.regno || userData.Regno;
-        const storedUserData = localStorage.getItem('userData');
+        const storedUserData = sessionStorage.getItem('userData');
         if (storedUserData) {
             try {
                 const parsed = JSON.parse(storedUserData);
                 if (parsed.regno) return parsed.regno || parsed.Regno;
             } catch (e) { }
         }
-        const user = JSON.parse(localStorage.getItem('user'));
+        const user = JSON.parse(sessionStorage.getItem('user'));
         if (user?.Regno) return user.Regno || user.regno;
-        return localStorage.getItem('regno') || '1';
+        return sessionStorage.getItem('regno') || '1';
     };
 
     const regno = getRegNo();
@@ -52,7 +52,7 @@ const CapitalPayoutHistory = () => {
 
     // Currency State
     const [selectedCurrency, setSelectedCurrency] = useState(() => {
-        return localStorage.getItem("selectedCurrency") || "USD";
+        return sessionStorage.getItem("selectedCurrency") || "USD";
     });
 
     // Format currency function
@@ -67,7 +67,7 @@ const CapitalPayoutHistory = () => {
 
     // Update all currency elements
     const changeCurrency = (currency) => {
-        localStorage.setItem("selectedCurrency", currency);
+        sessionStorage.setItem("selectedCurrency", currency);
         document.querySelectorAll(".currency1").forEach(function (el) {
             let amount = parseFloat(el.getAttribute("data-value"));
             if (isNaN(amount)) {
@@ -88,7 +88,7 @@ const CapitalPayoutHistory = () => {
     // Listen for currency changes from Header
     useEffect(() => {
         const handleCurrencyChange = () => {
-            let newCurrency = localStorage.getItem("selectedCurrency") || "USD";
+            let newCurrency = sessionStorage.getItem("selectedCurrency") || "USD";
             setSelectedCurrency(newCurrency);
             changeCurrency(newCurrency);
         };
@@ -98,7 +98,7 @@ const CapitalPayoutHistory = () => {
 
     // Initialize currency on mount
     useEffect(() => {
-        let savedCurrency = localStorage.getItem("selectedCurrency") || "USD";
+        let savedCurrency = sessionStorage.getItem("selectedCurrency") || "USD";
         setSelectedCurrency(savedCurrency);
         setTimeout(() => changeCurrency(savedCurrency), 100);
     }, []);

@@ -13,7 +13,7 @@ const apiClient = axios.create({
 
 // Request interceptor to add token
 apiClient.interceptors.request.use((config) => {
-  const token = localStorage.getItem("token");
+  const token = sessionStorage.getItem("token");
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -29,14 +29,16 @@ apiClient.interceptors.response.use(
       toast.error("Session expired !");
       
       // Clear local storage
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
-      localStorage.removeItem("isLoggedIn");
-      
+      sessionStorage.removeItem("token");
+      sessionStorage.removeItem("user");
+      sessionStorage.removeItem("isLoggedIn");
+      sessionStorage.removeItem('noticeSeen');
+      sessionStorage.removeItem('kycModalClosed');
+ 
       // Redirect to login page after a short delay (optional)
-      setTimeout(() => {
-        window.location.href = "/login";
-      }, 1500);
+      // setTimeout(() => {
+      //   window.location.href = "/login";
+      // },);
     }
     return Promise.reject(error);
   }

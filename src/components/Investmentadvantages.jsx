@@ -81,20 +81,15 @@ const Investmentadvantages = () => {
                 </div>
                 <div className="blog-card__content">
                   <div className="blog-card__author">
-                    <Link to="/blog-details.html" className="blog-card__author__item">
+                    
                       <div className="blog-card__author__content">
                         <h6 className="blog-card__author__name">{post.authorName}</h6>
                       </div>
-                    </Link>
+                
                   </div>
                   <h3 className="blog-card__title">
                     <Link to="/blog-details-right.html" style={{ fontSize: "16px" }}>{post.title}</Link>
                   </h3>
-                  <div className="blog-card__content__btn">
-                    <Link to="/blog-details-right.html" className="blog-card__content__btn__link">
-                      Read More <FaArrowRight className="read-more-icon" />
-                    </Link>
-                  </div>
                 </div>
               </div>
             </div>

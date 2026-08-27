@@ -327,7 +327,7 @@
 
 /* Form Elements */
 .form-group {
-  margin-bottom: 1.4rem;
+  margin-bottom: 8px;
 }
 
 .form-group label {
@@ -339,7 +339,6 @@
   text-transform: uppercase;
   letter-spacing: 0.5px;
   color: #4a627a;
-  margin-bottom: 0.5rem;
 }
 .text{
     font-family: var(--font-family, Courier, monospace);
@@ -462,41 +461,12 @@ input[type="password"].text,
 
 .update-btn {
   width: 100%;
-  padding: 0.9rem;
-  border-radius: 40px;
-  border: none;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  cursor: pointer;
-  transition: all 0.2s;
-  font-size: 0.9rem;
-  background: #f1f5f9;
-  color: #1e4a76;
-  font-family: var(--font-family);
+  padding: 100px;
+  padding: 10px 20px !important;
 }
 
-.primary-btn {
-  background: linear-gradient(95deg, #1e4a76, #0f2b3d);
-  color: white;
-  box-shadow: 0 5px 12px rgba(0, 0, 0, 0.1);
-}
 
-.primary-btn:hover {
-  background: linear-gradient(95deg, #143b5c, #0a1f2c);
-  transform: scale(0.98);
-}
 
-.secondary-btn {
-  background: #0c4a9a;
-  color: #f9f9f9;
-}
-
-.secondary-btn:hover {
-   background: #638be2;
-}
 
 .security-footer {
   margin-top: 2rem;

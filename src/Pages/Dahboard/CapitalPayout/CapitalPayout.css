@@ -188,18 +188,6 @@
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
 .success-modal-overlay {
   position: fixed;
   top: 0;
@@ -260,4 +248,458 @@
     opacity: 1;
     transform: scale(1);
   }
+}
+
+
+
+/* ================= CAPITAL PAYOUT - MOBILE FIXES ================= */
+
+@media (max-width: 768px) {
+  /* Balance cards single column */
+  .balance-cards {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Form aur notice single column */
+  .main-row {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* OTP section column mein */
+  .otp-section > div {
+    flex-direction: column !important;
+  }
+
+  .otp-section button {
+    width: 100% !important;
+  }
+
+  /* Buttons column mein */
+  .action-buttons {
+    flex-direction: column !important;
+  }
+
+  /* Table scrollable */
+  .custom-table-wrapper {
+    overflow-x: auto !important;
+  }
+
+  .custom-table-wrapper table {
+    min-width: 600px !important;
+  }
+
+  /* Search aur entries column mein */
+  .entries-search-bar {
+    flex-direction: column !important;
+  }
+
+  .search-wrapper input {
+    width: 100% !important;
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* CapAgreeModel.css - All classes with 'cam-' prefix */
+
+/* Main Container */
+.cam-container {
+  background: transparent;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: auto;
+  font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
+  padding: 0;
+  width: 100%;
+}
+
+.cam-form-wrapper {
+  width: 100%;
+  background: #ffffff;
+  box-shadow: 0 20px 40px -12px rgba(0, 20, 30, 0.25);
+  padding: 30px 25px 40px;
+  transition: 0.2s;
+  border: 1px solid rgba(0, 40, 60, 0.05);
+  margin: 0 auto;
+}
+
+/* Document Title */
+.cam-document-title {
+  font-weight: 700;
+  color: #0b2a3b;
+  letter-spacing: -0.3px;
+  margin-bottom: 12px;
+  line-height: 1.3;
+  display: flex;
+  flex-direction: column;
+}
+
+.cam-title-line1,
+.cam-title-line2,
+.cam-title-line3 {
+  display: block;
+}
+
+.cam-title-line1 {
+  font-size: 1.5rem;
+}
+
+.cam-title-line2 {
+  font-size: 1.5rem;
+}
+
+.cam-title-line3 {
+  font-size: 1.5rem;
+}
+
+
+.cam-company-box,
+.cam-customer-box {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cam-company-name {
+  color: #124257;
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.cam-company-address,
+.cam-company-status {
+  color: #1f4b62;
+  font-weight: 400;
+  font-size: 0.95rem;
+}
+
+.cam-customer-title {
+  color: #124257;
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.cam-customer-row {
+  color: #1f4b62;
+  font-weight: 400;
+  font-size: 0.95rem;
+}
+
+.cam-label-light {
+  color: #3e6a81;
+  font-weight: 400;
+}
+
+.cam-value-display {
+  font-weight: 500;
+  color: green;
+}
+
+/* Effective Date */
+.cam-effective-date-bar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  background: #f5faff;
+  padding: 8px 20px;
+  border-radius: 60px;
+  margin-bottom: 10px;
+}
+
+.cam-date-label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.cam-date-label-text {
+  font-weight: 600;
+  color: #124257;
+}
+
+.cam-effective-date-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.cam-date-box {
+  background: #f4f8fc;
+  padding: 8px 18px;
+  border-radius: 40px;
+  border: 1px solid #dce7f0;
+  color: #124257;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cam-date-hint {
+  color: #2a5770;
+  font-size: 0.9rem;
+  font-weight: 400;
+}
+
+.cam-divider-light {
+  border: none;
+  border-top: 1px dashed #cbdae5;
+  margin: 20px 0 24px;
+}
+
+/* Notice Card */
+.cam-notice-card {
+  /* background: #f1f6fa; */
+  /* padding: 22px 25px; */
+  padding: 8px;
+  /* border-radius: 18px;
+  margin: 20px 0 28px;
+  box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.02); */
+}
+
+.cam-notice-heading {
+  color: #0d3345;
+  font-weight: 600;
+  font-size: 1.2rem;
+  margin-bottom: 12px;
+}
+
+.cam-notice-dear {
+  color: #1f4053;
+  line-height: 1.6;
+  margin-bottom: 12px;
+  font-size: 0.98rem;
+}
+
+.cam-notice-text {
+  color: #1f4053;
+  line-height: 1.6;
+  margin-bottom: 12px;
+  font-size: 0.98rem;
+}
+
+.cam-notice-text:last-child {
+  margin-bottom: 0;
+}
+
+/* Form Section */
+.cam-form-section {
+  margin-top: 24px;
+}
+
+.cam-form-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px 30px;
+  margin-bottom: 22px;
+}
+
+.cam-form-group {
+  flex: 1 0 200px;
+  min-width: 180px;
+}
+
+.cam-form-label {
+  display: block;
+  font-weight: 600;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  color: #2a5770;
+  margin-bottom: 5px;
+}
+
+.cam-form-input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid #cbdae5;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  background: white;
+  transition: 0.15s;
+  font-family: inherit;
+}
+
+.cam-form-input:focus {
+  outline: none;
+  border-color: #1a6b8a;
+  box-shadow: 0 0 0 3px rgba(26, 107, 138, 0.15);
+}
+
+.cam-form-input::placeholder {
+  color: #8da7b8;
+  font-weight: 300;
+}
+
+/* Acknowledgement Check */
+.cam-acknowledgement-check {
+  display: flex;
+  gap: 14px;
+  margin: 20px 0 10px;
+  border-radius: 50px;
+  color: #192aae;
+}
+
+.cam-ack-checkbox {
+  width: 20px;
+  height: 20px;
+  accent-color: #124257;
+  cursor: pointer;
+  margin-top: 8px;
+}
+
+.cam-ack-label {
+  font-weight: 500;
+  color: #0b2a3b;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+
+/* Signature Area */
+.cam-signature-area {
+  margin-top: 25px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 40px;
+  background: #fafdff;
+  padding: 20px 20px 10px;
+  border-radius: 18px;
+  border: 1px solid #e2ecf5;
+}
+
+.cam-signature-item {
+  flex: 1 0 180px;
+}
+
+.cam-sig-label {
+  font-weight: 600;
+  color: #1f4b62;
+  display: block;
+  margin-bottom: 6px;
+  font-size: 0.9rem;
+}
+
+.cam-sig-line {
+  border-bottom: 2px solid #bacedb;
+  padding: 8px 0 4px;
+  margin-top: 12px;
+  color: #1f4b62;
+  font-weight: 300;
+  min-width: 160px;
+  font-size: 1.2rem;
+  letter-spacing: 2px;
+}
+
+.cam-sig-sub {
+  font-size: 0.8rem;
+  color: #3f6a80;
+  margin-top: 6px;
+}
+
+/* Submit Button */
+.cam-submit-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 18px;
+}
+
+/* Feedback */
+.cam-feedback-message {
+  margin-top: 14px;
+  padding: 12px 20px;
+  border-radius: 40px;
+  font-weight: 500;
+  transition: 0.2s;
+  display: inline-block;
+  width: 100%;
+}
+
+.cam-feedback-message.cam-success {
+  color: #0f4b5e;
+  background: #ddf0f0;
+}
+
+.cam-feedback-message.cam-error {
+  color: #b13e3e;
+  background: #ffe6e6;
+}
+
+/* Footer */
+.cam-footer-note {
+  margin-top: 30px;
+  font-size: 0.8rem;
+  color: #4a6f84;
+  border-top: 1px solid #e0eaf2;
+  padding-top: 20px;
+  text-align: center;
+}
+
+/* Responsive */
+@media (max-width: 700px) {
+  .cam-form-wrapper {
+    padding: 20px 16px;
+  }
+  .cam-document-title {
+    font-size: 1.5rem;
+  }
+  .cam-title-line1,
+  .cam-title-line2,
+  .cam-title-line3 {
+    font-size: 1.5rem;
+  }
+  .cam-company-customer-grid {
+    flex-direction: column;
+    gap: 12px;
+  }
+  .cam-signature-area {
+    flex-direction: column;
+    gap: 20px;
+  }
+  .cam-effective-date-bar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  } 
+  .cam-btn-submit {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+.cam-form-wrapper::-webkit-scrollbar {
+  display: none;
+}
+.cam-form-wrapper::-webkit-scrollbar,
+.cam-container::-webkit-scrollbar,
+.cam-form-section::-webkit-scrollbar,
+.modal-content000::-webkit-scrollbar {
+  display: none;
 }

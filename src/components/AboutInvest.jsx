@@ -34,7 +34,7 @@ const AboutTwo = () => {
                       </div>
                       <div className="about-two__box__content">
                         <span className="about-two__box__subtitle">Contact to anytime</span>
-                        <a href="tel:92-3080-808" className="about-two__box__text">healthcare@mangowealthplanner.com</a>
+                        <a href="#" className="about-two__box__text">healthcare@Cureness360.com</a>
                       </div>
                     </div>
                   </div>

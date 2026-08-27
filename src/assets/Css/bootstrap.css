@@ -71,3 +71,10 @@
   flex: 1 1 auto;
   padding: 1rem;
 }
+ ul {
+    margin-top: 0;
+    padding-left: 0px !important;
+}
+.mb-5{
+margin-bottom: 80px !important;
+}

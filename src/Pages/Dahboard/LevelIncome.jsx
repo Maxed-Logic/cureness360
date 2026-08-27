@@ -58,28 +58,28 @@ const LevelIncome = () => {
   }, [open, show, op]);
 
 useEffect(() => {
-const regno = localStorage.getItem("regno");
-  const findlvl = 10;
+//const regno = sessionStorage.getItem("regno");
+ // const findlvl = 10;
 
-  apiClient.get(`/Dashboard/team-counts`, {
-    params: { regno, findlvl }
-  })
-  .then((res) => {
-    console.log("Team API response:", res.data);
+  // apiClient.get(`/Dashboard/team-counts`, {
+  //   params: { regno, findlvl }
+  // })
+  // .then((res) => {
+
     
-    // ✅ Data is directly in res.data (not res.data.data)
-    const apiData = res.data;
+  //   // ✅ Data is directly in res.data (not res.data.data)
+  //   const apiData = res.data;
     
-    setLevels([
-      {
-        teamCount: apiData.totalTeam ?? 0,
-        active: apiData.activeTeam ?? 0,
-        inactive: apiData.inactiveTeam ?? 0,
+  //   setLevels([
+  //     {
+  //       teamCount: apiData.totalTeam ?? 0,
+  //       active: apiData.activeTeam ?? 0,
+  //       inactive: apiData.inactiveTeam ?? 0,
       
-      },
-    ]);
-  })
-  .catch((err) => console.log("❌ API ERROR:", err));
+  //     },
+  //   ]);
+  // })
+  // .catch((err) => console.log(" API ERROR:", err));
 }, [userData]);
 
   // Animation control for Team modal
@@ -92,16 +92,31 @@ const regno = localStorage.getItem("regno");
     }
   }, [show]);
 
-  const teamData = levels[0] || {};
-  const menuItems = [
-    { name: "Total Team", icon: <FaUserPlus />, value: teamData.teamCount },
-   { name: "DirectId", icon: <FaUsers />, value: userData?.directId ?? 0 },
-    { name: "--" },
-    { name: "--" },
-    { name: "Active Team", icon: <FaUsers />, value: teamData.active },
-    { name: "Inactive Team", icon: <RiUserSharedFill />, value: teamData.inactive, color: "#ef4444" }
-  ];
-
+  //const teamData = levels[0] || {};
+const menuItems = [
+  { 
+    name: "Total Team", 
+    icon: <FaUserPlus />, 
+    value: userData?.teamcount ?? 0  // ✅ Fixed
+  },
+  { 
+    name: "DirectId", 
+    icon: <FaUsers />, 
+    value: userData?.directId ?? 0   // ✅ Already fixed
+  },
+  { 
+    name: "Active Team", 
+    icon: <FaUsers />, 
+    value: userData?.activeteam ?? 0, // ✅ Fixed
+    color: "#22C55E"
+  },
+  { 
+    name: "Inactive Team", 
+    icon: <RiUserSharedFill />, 
+    value: userData?.inactiveteam ?? 0, // ✅ Fixed
+    color: "#EF4444"
+  }
+];
   return (
     <>
       <div className="activity-container col-lg-12 p-3 mb-5">
@@ -126,13 +141,13 @@ const regno = localStorage.getItem("regno");
                               <div className="level-counts-wrapper">
                                 <button className="close-btn-line" onClick={() => setOpen(false)}>✕</button>
                                 <div className="coins">
-                                  <div className="level-card">
+                                  {/* <div className="level-card">
                                     <span className="stext">Direct Id</span>
                                     <span>{userData?.directId || 0}</span>
-                                  </div>
+                                  </div> */}
                                     <div className="level-card">
                                     <span className="stext">Invest Business</span>
-                                    <span>{userData?.MiningTeamBusiness || 0}</span>
+                                    <span>${userData?.MiningTeamBusiness || 0}</span>
                                   </div>
                                   <div className="level-card">
                                     <span className="stext">Strong/Weaker Leg</span>
@@ -144,11 +159,11 @@ const regno = localStorage.getItem("regno");
                                   </div>
                                   <div className="level-card">
                                     <span className="stext">Current Month Business</span>
-                                    <span>{userData?.LeftPerMonth} / {userData?.RightPerMonth}</span>
+                                    <span> ${userData?.LeftPerMonth} / {userData?.RightPerMonth}</span>
                                   </div>
                                   <div className="level-card">
                                     <span className="stext">Total Overall Business</span>
-                                    <span>{userData?.LeftBusiness} / {userData?.RightBusiness}</span>
+                                    <span>${userData?.LeftBusiness} / {userData?.RightBusiness}</span>
                                   </div>
                                 </div>
                               </div>

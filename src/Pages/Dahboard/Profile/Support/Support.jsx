@@ -22,11 +22,11 @@ const Support = () => {
   const pageSize = 10;
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
 
-  const getRegNo = () => userData?.regno || user?.Regno || user?.regno || localStorage.getItem('regno') || '1';
+  const getRegNo = () => userData?.regno || user?.Regno || user?.regno || sessionStorage.getItem('regno') || '1';
   const getLoginId = () => {
     if (userData?.me) return userData.me;
     if (user?.loginid) return user.loginid;
-    const stored = localStorage.getItem('userData');
+    const stored = sessionStorage.getItem('userData');
     if (stored) {
       try {
         const parsed = JSON.parse(stored);
@@ -218,7 +218,7 @@ const Support = () => {
         <div className="modal-overlay01">
           <div className="modal-content01">
             <div className="modal-header01"><h2>Create New Ticket</h2><button className="modal-close" onClick={() => setShowModal(false)}>✕</button></div>
-            <form className="modal-middle" onSubmit={handleSubmit}>
+            <form className="modal-middle" onSubmit={handleSubmit} style={{padding: "10px"}}>
               <div className="form-group01"><label className='label01'>Ticket Type *</label>
                 <select name="ticketType" value={formData.ticketType} onChange={handleInputChange} required>
                   <option value="">-- Select Message Type --</option>

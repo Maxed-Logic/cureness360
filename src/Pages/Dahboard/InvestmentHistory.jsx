@@ -13,8 +13,8 @@ const BonusReport = () => {
   const [pageIndex, setPageIndex] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(15);
 
-  const regno = localStorage.getItem("regno");
-  const token = localStorage.getItem("token");
+  const regno = sessionStorage.getItem("regno");
+  const token = sessionStorage.getItem("token");
 
   useEffect(() => {
     const fetchBonus = async () => {
@@ -30,7 +30,6 @@ const BonusReport = () => {
             },
           }
         );
-        console.log("selfhistroy", res);
 
         // Validate the response data structure
         if (res.data && res.data.data) {

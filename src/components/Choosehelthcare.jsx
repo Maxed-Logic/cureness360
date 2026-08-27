@@ -23,7 +23,7 @@ const WhyChoose = () => {
                     Choose Healthcare
                   </h6>
                   <h3 className="sec-title__title">
-                    Why Choose Mango Wealth Planner for Healthcare?
+                    Why Choose Cureness for Healthcare?
                   </h3>
                 </div>
                 <p className="about-fore__top__text">
@@ -55,7 +55,12 @@ const WhyChoose = () => {
                 </li>
               </ul>
               <div className="about-fore__link">
-                <Link to="/login" className="laboix-btn">
+                <Link
+                  to="/login"
+                  className="laboix-btn m"
+                  state={{ fromHome: true }}
+                  onClick={() => window.scrollTo(0, 0)}
+                >
                   Discover More
                 </Link>
               </div>
@@ -69,12 +74,12 @@ const WhyChoose = () => {
                 </div>
                 <div className="about-fore__item__call">
                   <div className="about-fore__item__icon">
-                    <HiOutlineMail style={{color: "#fff"}}/>
+                    <HiOutlineMail style={{ color: "#fff" }} />
                   </div>
                   <div className="about-fore__item__content">
                     <span className="about-fore__item__subtitle">Contact to anytime</span>
                     <h5 className="about-fore__item__number">
-                      <a href="tel:+92-3800-8060">healthcare@mangowealthplanner.com</a>
+                      <a href="">healthcare@Cureness360.com</a>
                     </h5>
                   </div>
                 </div>

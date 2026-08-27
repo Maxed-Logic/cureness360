@@ -47,7 +47,7 @@ const TestimonialsSection = () => {
                   <div className="testimonials-two__star">
                    Real-time AI Insights
                   </div>
-                  <p className="testimonials-two__text">MANGO WEALTH PLANNER utilizes advanced AI algorithms to analyze healthcare markets, predict pharmaceutical approvals, and optimize hospital investment portfolios. Our proprietary Med-Analytica platform provides real-time insights into clinical trial data, regulatory changes, and healthcare spending trends.</p>
+                  <p className="testimonials-two__text">CURENESS utilizes advanced AI algorithms to analyze healthcare markets, predict pharmaceutical approvals, and optimize hospital investment portfolios. Our proprietary Med-Analytica platform provides real-time insights into clinical trial data, regulatory changes, and healthcare spending trends.</p>
                   <div className="testimonials-two__author">
                   </div>
                 </div>

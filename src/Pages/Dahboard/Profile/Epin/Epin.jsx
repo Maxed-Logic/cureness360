@@ -20,7 +20,7 @@ export const Epin = () => {
         ? ['S. No.', 'E-Pin No.', 'E-Pin Name', 'Action']
         : ['S. No.', 'E-Pin No.', 'E-Pin Name', 'User Id', 'Name'];
 
-    const getRegNo = () => localStorage.getItem('regno');
+    const getRegNo = () => sessionStorage.getItem('regno');
 
     const fetchEpinData = async () => {
         setLoading(true);

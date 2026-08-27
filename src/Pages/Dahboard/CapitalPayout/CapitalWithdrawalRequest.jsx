@@ -1,592 +1,989 @@
 import React, { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
 import { IoSend } from 'react-icons/io5';
 import { FaCreditCard, FaRegCopy } from 'react-icons/fa';
-import toast from 'react-hot-toast';
-import { useUser } from '../../../context/UserContext';
-import apiClient from '../../../api/apiClient';
+import { FiCopy, FiFileText, FiFile, FiPrinter } from 'react-icons/fi';
+import { FaFileCsv, FaFilePdf } from 'react-icons/fa';
 import CustomTable from '../CustomTable/CustomTable';
+import Pagination from '../../../components/ui/Pagination';
+import { useUser } from '../../../context/UserContext';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import apiClient from '../../../api/apiClient';
+import CapAgreeModel from './CapAgreeModel';
 import './CapitalPayout.css';
 
-// Currency Configuration
-const currencyRates = {
-    USD: 1,
-    INR: 90,
-    EUR: 0.92,
-    GBP: 0.78
-};
+const CapitalWithdrawalRequest = () => {
+    const [selectedMethod, setSelectedMethod] = useState('');
+    const [otp, setOtp] = useState('');
+    const [agreeTerms, setAgreeTerms] = useState(false);
+    const { userData } = useUser();
+    
+    const [tableData, setTableData] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [searchTerm, setSearchTerm] = useState("");
+    const [pageIndex, setPageIndex] = useState(1);
+    const [pageSize, setPageSize] = useState(10);
+    const [totalRecords, setTotalRecords] = useState(0);
 
-const currencySymbols = {
-    USD: "$",
-    INR: "₹",
-    EUR: "€",
-    GBP: "£"
-};
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isSendingOTP, setIsSendingOTP] = useState(false);
+    const [otpSent, setOtpSent] = useState(false);
+    const [otpVerified, setOtpVerified] = useState(false);
 
-const WalletWithdrawal = () => {
-    const [searchParams] = useSearchParams();
-    const rid = searchParams.get('Capital');
+    const [showCapAgreeModel, setShowCapAgreeModel] = useState(true);
 
-    const { userData, loading: userLoading, refreshData } = useUser();
+    const [walletAddress, setWalletAddress] = useState('');
+    const [accountNumber, setAccountNumber] = useState('');
 
-    // Currency State
     const [selectedCurrency, setSelectedCurrency] = useState(() => {
-        return localStorage.getItem("selectedCurrency") || "USD";
+        return sessionStorage.getItem('selectedCurrency') || 'USD';
     });
 
-    // Helper to get loginid
-    const getLoginId = () => {
-        const storedUserData = localStorage.getItem('userData');
-        if (storedUserData) {
-            try {
-                const parsed = JSON.parse(storedUserData);
-                if (parsed.loginid) return parsed.loginid;
-                if (parsed.me) return parsed.me;
-            } catch (e) { }
-        }
-        const user = JSON.parse(localStorage.getItem('user'));
-        if (user?.loginid) return user.loginid;
-        if (user?.me) return user.me;
-        return 'india';
-    };
-    const loginid = getLoginId();
+    const investmentBalance = userData?.Invest || 0;
+    const incomeBalance = (userData?.Working || 0) + (userData?.Smart_Wallet || 0);
 
-    // Get regno
-    const regno =
-        userData?.regno ||
-        userData?.Regno ||
-        JSON.parse(localStorage.getItem('user'))?.Regno ||
-        JSON.parse(localStorage.getItem('user'))?.regno ||
-        localStorage.getItem('regno');
+    let withdrawalBalance = 0;
+    if (investmentBalance <= incomeBalance) {
+        withdrawalBalance = 0;
+    } else {
+        withdrawalBalance = investmentBalance - incomeBalance;
+    }
 
-    // State
-    const [capitalRecord, setCapitalRecord] = useState(null);
-    const [loading, setLoading] = useState(false);
-    const [withdrawAmount, setWithdrawAmount] = useState('');
-    const [selectedMethod, setSelectedMethod] = useState('BANK CARD');
-    const [submitting, setSubmitting] = useState(false);
-    const [otp, setOtp] = useState('');
-    const [otpSent, setOtpSent] = useState(false);
-    const [sendingOtp, setSendingOtp] = useState(false);
-    const [verifyingOtp, setVerifyingOtp] = useState(false);
-    const [otpTimer, setOtpTimer] = useState(0);
-    const [otpIntervalId, setOtpIntervalId] = useState(null);
-    const [showSuccessModal, setShowSuccessModal] = useState(false);
-    const [successAmount, setSuccessAmount] = useState(0);
-
-    // Saved addresses
-    const accountNumber = localStorage.getItem('accountNumber') || '';
-    const bep20Wallet = localStorage.getItem('bep20Wallet') || '';
-
-    // Format currency function
-    const formatCurrency = (amount) => {
-        if (!amount && amount !== 0) return `${currencySymbols[selectedCurrency]}0.00`;
-        const converted = amount * currencyRates[selectedCurrency];
-        return `${currencySymbols[selectedCurrency]}${converted.toLocaleString(undefined, {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
-        })}`;
-    };
-
-    // Update all currency elements
-    const changeCurrency = (currency) => {
-        localStorage.setItem("selectedCurrency", currency);
-        document.querySelectorAll(".currency1").forEach(function (el) {
-            let amount = parseFloat(el.getAttribute("data-value"));
-            if (isNaN(amount)) {
-                let text = el.innerText;
-                let match = text.match(/(\d+(?:\.\d+)?)/);
-                amount = match ? parseFloat(match[1]) : 0;
-            }
-            if (!isNaN(amount)) {
-                let converted = amount * currencyRates[currency];
-                el.innerHTML = currencySymbols[currency] + converted.toLocaleString(undefined, {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2
-                });
-            }
-        });
-    };
-
-    // Listen for currency changes from Header
+    // 🔥 Body scroll ko freeze/unfreeze karo
     useEffect(() => {
-        const handleCurrencyChange = () => {
-            let newCurrency = localStorage.getItem("selectedCurrency") || "USD";
-            setSelectedCurrency(newCurrency);
-            changeCurrency(newCurrency);
-        };
-        window.addEventListener('currencyChanged', handleCurrencyChange);
-        return () => window.removeEventListener('currencyChanged', handleCurrencyChange);
-    }, []);
-
-    // Initialize currency on mount
-    useEffect(() => {
-        let savedCurrency = localStorage.getItem("selectedCurrency") || "USD";
-        setSelectedCurrency(savedCurrency);
-        setTimeout(() => changeCurrency(savedCurrency), 100);
-    }, []);
-
-    // Check if withdraw button should be disabled
-    const isWithdrawDisabled = () => {
-        const amountNum = parseFloat(withdrawAmount);
-        return (
-            submitting ||
-            verifyingOtp ||
-            !otpSent ||
-            capitalRecord?.remainingCapital <= 0 ||
-            !withdrawAmount ||
-            isNaN(amountNum) ||
-            amountNum <= 0 ||
-            !otp ||
-            otp.length !== 6 ||
-            (selectedMethod === 'BANK CARD' && !accountNumber) ||
-            (selectedMethod === 'USDT TRC20' && !bep20Wallet)
-        );
-    };
-
-    // Check if OTP button should be disabled
-    const isOtpButtonDisabled = () => {
-        return otpTimer > 0 || sendingOtp || submitting || verifyingOtp;
-    };
-
-    // Cleanup timer
-    useEffect(() => {
-        return () => {
-            if (otpIntervalId) clearInterval(otpIntervalId);
-        };
-    }, [otpIntervalId]);
-
-    // Fetch capital record
-    useEffect(() => {
-        if (!regno || !rid) {
-            if (!regno && !userLoading) toast.error('User registration number not found');
-            if (!rid) toast.error('No capital record specified');
-            return;
-        }
-
-        const fetchRecord = async () => {
-            setLoading(true);
-            try {
-                const res = await apiClient.get(`/IncomePayout/capital-withdrawal-report/${rid}`);
-                if (res.data?.success && res.data?.response?.data?.length > 0) {
-                    const item = res.data.response.data[0];
-                    setCapitalRecord({
-                        id: item.Rid,
-                        investmentDate: item.Rdate ? new Date(item.Rdate).toLocaleDateString('en-GB') : '-',
-                        amount: item.Rkprice || 0,
-                        profit: item.Rpayid || 0,
-                        withdrawal: 0,
-                        remainingCapital: item.payout || 0,
-                        remainingDays: item.Remainingdays ?? '-',
-                        withdrawalChargePercent: item.PayoutCharge || 10,
-                    });
-                } else {
-                    toast.error('Capital record not found');
-                }
-            } catch (err) {
-                console.error(err);
-                toast.error('Error fetching capital data');
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchRecord();
-    }, [regno, rid, userLoading]);
-
-    // Send OTP
-    const sendOtp = async () => {
-        if (isOtpButtonDisabled()) return;
-
-        if (!regno) {
-            toast.error('Registration number not found. Please login again.');
-            return;
-        }
-
-        setSendingOtp(true);
-        try {
-            const response = await apiClient.post(`/User/genrate-otp?loginid=${loginid}&regno=${regno}`, {});
-
-            if (response.data.success || response.data.status === 'success') {
-                toast.success(response.data.message || 'OTP sent successfully!');
-                setOtpSent(true);
-                setOtpTimer(300);
-
-                const interval = setInterval(() => {
-                    setOtpTimer((prev) => {
-                        if (prev <= 1) {
-                            clearInterval(interval);
-                            setOtpIntervalId(null);
-                            return 0;
-                        }
-                        return prev - 1;
-                    });
-                }, 1000);
-
-                setOtpIntervalId(interval);
-            } else {
-                toast.error(response.data.message || 'Failed to send OTP');
-            }
-        } catch (err) {
-            console.error(err);
-            toast.error(err.response?.data?.message || 'Error sending OTP');
-        } finally {
-            setSendingOtp(false);
-        }
-    };
-
-    // Verify OTP and withdraw
-    const verifyOtpAndWithdraw = async () => {
-        const amountNum = parseFloat(withdrawAmount);
-
-        if (!withdrawAmount || isNaN(amountNum) || amountNum <= 0) {
-            toast.error('Please enter a valid amount');
-            return;
-        }
-        if (!capitalRecord || amountNum > capitalRecord.remainingCapital) {
-            toast.error(`Amount cannot exceed available balance ${formatCurrency(capitalRecord?.remainingCapital)}`);
-            return;
-        }
-        if (!otp || otp.length !== 6) {
-            toast.error('Please enter a valid 6-digit OTP');
-            return;
-        }
-
-        let wallet_address = '';
-        let pay_mode = '';
-        if (selectedMethod === 'BANK CARD') {
-            if (!accountNumber) {
-                toast.error('No bank card added. Please add a card first.');
-                return;
-            }
-            wallet_address = accountNumber;
-            pay_mode = 'inr';
-        } else if (selectedMethod === 'USDT TRC20') {
-            if (!bep20Wallet) {
-                toast.error('No USDT TRC20 address added. Please add an address first.');
-                return;
-            }
-            wallet_address = bep20Wallet;
-            pay_mode = 'usdt';
+        if (showCapAgreeModel) {
+            document.body.style.overflow = 'hidden';
+            document.body.style.position = 'fixed';
+            document.body.style.width = '100%';
         } else {
-            toast.error('Invalid payment method');
-            return;
+            document.body.style.overflow = '';
+            document.body.style.position = '';
+            document.body.style.width = '';
         }
+        return () => {
+            document.body.style.overflow = '';
+            document.body.style.position = '';
+            document.body.style.width = '';
+        };
+    }, [showCapAgreeModel]);
 
-        setVerifyingOtp(true);
+    const fetchTransactionData = async () => {
+        setLoading(true);
         try {
-            const verifyRes = await apiClient.post('/User/verify-otp', null, {
-                params: {
-                    loginid: loginid,
-                    regno: regno,
-                    otp: String(otp)
-                }
-            });
+            const regno = userData?.regno;
+            const response = await apiClient.get(`/IncomePayout/capital-payout-history/${regno}`);
 
-            if (!verifyRes.data?.success) {
-                toast.error(verifyRes.data?.message || 'Invalid OTP');
-                setVerifyingOtp(false);
+            if (response.data && response.data.success) {
+                const apiData = response.data.response?.data || [];
+                
+                const mappedData = apiData.map((item) => ({
+                    id: item.ACID || item.payid || Math.random(),
+                    debit: item.debit || 0,
+                    credit: item.credit || 0,
+                    date: item.TransDate ? new Date(item.TransDate).toLocaleDateString('en-GB') : '-',
+                    type: item.transType || 'Withdrawal',
+                    remark: item.Remark || 'Capital withdrawal request',
+                    status: item.Status || 'Pending',
+                    payMode: item.payMode,
+                    trAmount: item.trAmount,
+                    netPayable: item.netPayable,
+                    othercharge: item.othercharge,
+                    AccountNo: item.AccountNo,
+                    trStatus: item.trStatus,
+                    TransDate: item.TransDate
+                }));
+
+                setTableData(mappedData);
+                setTotalRecords(mappedData.length);
+            } else {
+                setTableData([]);
+                setTotalRecords(0);
+                toast.info('No withdrawal history found');
+            }
+        } catch (error) {
+            console.error("Error fetching data:", error);
+            toast.error('Failed to load transaction history');
+            setTableData([]);
+            setTotalRecords(0);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const loadBankDetailsFromSession = () => {
+        try {
+            const savedData = sessionStorage.getItem("bankDetails");
+            if (savedData) {
+                const bankDetails = JSON.parse(savedData);
+                if (bankDetails.wallwtaddresh) {
+                    setWalletAddress(bankDetails.wallwtaddresh);
+                }
+                if (bankDetails.accountNumber) {
+                    setAccountNumber(bankDetails.accountNumber);
+                }
+                return bankDetails;
+            } else {
+                console.warn("No bank details found in sessionStorage");
+                return null;
+            }
+        } catch (error) {
+            console.error("Error loading bank details from session:", error);
+            return null;
+        }
+    };
+
+    useEffect(() => {
+        loadBankDetailsFromSession();
+    }, []);
+
+    useEffect(() => {
+        const handleCurrencyChange = (event) => {
+            setSelectedCurrency(event.detail || 'USD');
+        };
+        
+        window.addEventListener('currencyChanged', handleCurrencyChange);
+        
+        return () => {
+            window.removeEventListener('currencyChanged', handleCurrencyChange);
+        };
+    }, []);
+
+    const handleOTPAction = async () => {
+        if (!otpSent) {
+            if (!selectedMethod) {
+                toast.warning('Please select a payment mode first');
                 return;
             }
 
-            setSubmitting(true);
+            if (withdrawalBalance <= 0) {
+                toast.warning('No withdrawal balance available');
+                return;
+            }
+
+            setIsSendingOTP(true);
+
+            try {
+                const loginid = userData?.me;
+                const regno = userData?.regno;
+
+                const response = await apiClient.post(
+                    '/User/genrate-otp',
+                    null,
+                    {
+                        params: {
+                            loginid: loginid,
+                            regno: regno
+                        }
+                    }
+                );
+
+                if (response.data && response.data.success) {
+                    toast.success(` ${response.data.message || 'OTP sent successfully!'}`);
+                    setOtpSent(true);
+                    setOtpVerified(false);
+                } else {
+                    toast.error(response.data.message || 'Failed to send OTP');
+                }
+            } catch (error) {
+                console.error('OTP Error:', error);
+                
+                if (error.response) {
+                    const data = error.response.data;
+                    toast.error(data.message || 'Failed to send OTP. Please try again.');
+                } else {
+                    toast.error('Network error. Please check your connection.');
+                }
+            } finally {
+                setIsSendingOTP(false);
+            }
+        } else {
+            if (!otp || otp.length < 4) {
+                toast.warning('Please enter the OTP sent to your email/phone');
+                return;
+            }
+
+            setIsSendingOTP(true);
+
+            try {
+                const loginid = userData?.me;
+                const regno = userData?.regno;
+
+                const response = await apiClient.post(
+                    '/User/verify-otp',
+                    null,
+                    {
+                        params: {
+                            loginid: loginid,
+                            regno: regno,
+                            otp: otp
+                        }
+                    }
+                );
+
+                if (response.data && response.data.success) {
+                    toast.success(' OTP verified successfully!');
+                    setOtpVerified(true);
+                    setOtpSent(false);
+                    
+                    console.log("Opening CapAgreeModel...");
+                    setShowCapAgreeModel(true);
+                    
+                } else {
+                    toast.error(response.data.message || 'Invalid OTP. Please try again.');
+                    setOtpVerified(false);
+                }
+            } catch (error) {
+                console.error('OTP Verification Error:', error);
+                
+                if (error.response) {
+                    const data = error.response.data;
+                    toast.error(data.message || 'OTP verification failed. Please try again.');
+                } else {
+                    toast.error('Network error. Please check your connection.');
+                }
+                setOtpVerified(false);
+            } finally {
+                setIsSendingOTP(false);
+            }
+        }
+    };
+
+    const handleWithdrawAll = async () => {
+        if (!selectedMethod) {
+            toast.warning('Please select a payment mode');
+            return;
+        }
+
+        if (withdrawalBalance <= 0) {
+            toast.warning('No withdrawal balance available');
+            return;
+        }
+
+        if (!otpVerified) {
+            toast.warning('Please verify OTP first');
+            return;
+        }
+
+        if (!agreeTerms) {
+            toast.warning('Please agree to terms and conditions');
+            return;
+        }
+
+        setIsSubmitting(true);
+
+        try {
             const payload = {
-                regno: parseInt(regno),
-                amount: amountNum,
-                wallet_address: wallet_address,
-                pay_mode: pay_mode,
-                rid: parseInt(rid),
+                regno: userData?.RegNo || 1,
+                amount: parseFloat(withdrawalBalance),
+                wallet_address: selectedMethod === 'USDT' ? walletAddress : (accountNumber),
+                pay_mode: selectedMethod.toLowerCase(),
+                rid: 0
             };
 
-            console.log('Withdrawal payload:', payload);
-            const withdrawalRes = await apiClient.post('/IncomePayout/capital-payout-withdrawal', payload);
+            const response = await apiClient.post(
+                '/IncomePayout/capital-payout-withdrawal',
+                payload
+            );
 
-            const responseMessage = withdrawalRes.data?.message;
-
-            if (withdrawalRes.data?.success) {
-                toast.success(responseMessage || `Withdrawal request of ${formatCurrency(amountNum)} submitted successfully!`);
-
-                setSuccessAmount(amountNum);
-                setShowSuccessModal(true);
-                setTimeout(() => setShowSuccessModal(false), 3000);
-
-                setCapitalRecord(prev => ({ ...prev, remainingCapital: prev.remainingCapital - amountNum }));
-                setWithdrawAmount('');
+            if (response.data && response.data.success) {
+                toast.success(` Full withdrawal of $${withdrawalBalance.toFixed(2)} submitted successfully!`);
                 setOtp('');
+                setSelectedMethod('');
+                setAgreeTerms(false);
+                setOtpVerified(false);
                 setOtpSent(false);
-                setOtpTimer(0);
-                if (otpIntervalId) clearInterval(otpIntervalId);
-                setOtpIntervalId(null);
-
-                await refreshData();
-
+                await fetchTransactionData();
+                setTimeout(() => {
+                    window.location.reload();
+                }, 2000);
             } else {
-                toast.error(responseMessage || 'Withdrawal failed. Please try again.');
+                toast.error(response.data.message || 'Failed to submit withdrawal request');
             }
-        } catch (err) {
-            console.error('Withdrawal error:', err.response?.data || err);
-            const errorMsg = err.response?.data?.message || err.message || 'Server error. Please try again later.';
-            toast.error(errorMsg);
+        } catch (error) {
+            console.error('Withdrawal API Error:', error);
+            
+            if (error.response) {
+                const status = error.response.status;
+                const data = error.response.data;
+                
+                if (status === 422) {
+                    toast.error(data.message || 'Cannot process withdrawal due to validation error');
+                } else if (status === 401) {
+                    toast.error('Session expired. Please login again.');
+                } else if (status === 400) {
+                    toast.error(data.message || 'Bad request. Please check your details.');
+                } else {
+                    toast.error(data.message || 'Something went wrong. Please try again.');
+                }
+            } else if (error.request) {
+                toast.error('📡 No response from server. Please check your connection.');
+            } else {
+                toast.error('Error submitting request. Please try again.');
+            }
         } finally {
-            setVerifyingOtp(false);
-            setSubmitting(false);
+            setIsSubmitting(false);
         }
     };
 
-    const quickAmounts = [100, 300, 500, 1000, 5000, 10000];
-    const validQuickAmounts = capitalRecord
-        ? quickAmounts.filter(amt => amt <= capitalRecord.remainingCapital)
-        : [];
+    const handleCancel = () => {
+        setOtp('');
+        setSelectedMethod('');
+        setAgreeTerms(false);
+        setOtpVerified(false);
+        setOtpSent(false);
+        toast.info('Form has been reset');
+    };
 
-    const columns = [
-        'Investment Date',
-        'Invested Amount',
-        'Profit',
-        'Withdrawal',
-        'Withdrawal Charge %',
-        'Remaining Days'
-    ];
+    useEffect(() => {
+        if (userData?.RegNo) {
+            fetchTransactionData();
+        }
+    }, [userData]);
 
-    const tableRow = capitalRecord && (
-        <tr>
-            <td className="text-center">{capitalRecord.investmentDate}</td>
-            <td className="text-center amount-cell">
-                <span className="currency1" data-value={capitalRecord.amount}>
-                    {formatCurrency(capitalRecord.amount)}
-                </span>
-            </td>
-            <td className="text-center profit-cell">
-                <span className="currency1" data-value={capitalRecord.profit}>
-                    {formatCurrency(capitalRecord.profit)}
-                </span>
-            </td>
-            <td className="text-center">
-                <span className="currency1" data-value={capitalRecord.withdrawal}>
-                    {formatCurrency(capitalRecord.withdrawal)}
-                </span>
-            </td>
-            <td className="text-center">{capitalRecord.withdrawalChargePercent}%</td>
-            <td className="text-center">{capitalRecord.remainingDays}</td>
-        </tr>
-    );
-
-    if (loading) {
+    const filteredRecords = tableData.filter((row) => {
+        const searchLower = searchTerm.toLowerCase();
         return (
-            <div className="ww-page p-4">
-                <CustomTable columns={columns} loading={true} loaderText="Loading capital details..." />
-            </div>
+            (row.type && row.type.toLowerCase().includes(searchLower)) ||
+            (row.remark && row.remark.toLowerCase().includes(searchLower)) ||
+            (row.date && row.date.toLowerCase().includes(searchLower)) ||
+            (row.status && row.status.toLowerCase().includes(searchLower)) ||
+            (row.payMode && row.payMode.toLowerCase().includes(searchLower))
         );
-    }
+    });
 
-    if (!capitalRecord) {
-        return (
-            <div className="ww-page p-4 text-center">
-                <p className="text-danger">No capital record found or invalid request.</p>
-            </div>
-        );
-    }
+    const totalItems = filteredRecords.length;
+    const totalPages = Math.ceil(totalItems / pageSize);
+    const startIndex = (pageIndex - 1) * pageSize;
+    const currentRecords = filteredRecords.slice(startIndex, startIndex + pageSize);
+
+    useEffect(() => {
+        setPageIndex(1);
+    }, [searchTerm]);
+
+    const columns = ['S.I.No.', 'Debit', 'Date', 'Type', 'Remark', 'Status'];
+
+    const getStatusColor = (status) => {
+        const colors = {
+            'Pending': '#f59e0b',
+            'Approved': '#10b981',
+            'Completed': '#10b981',
+            'Failed': '#ef4444',
+            'Rejected': '#ef4444',
+            'Cancelled': '#6b7280'
+        };
+        return colors[status] || '#6b7280';
+    };
 
     return (
-        <div className="downline-main-wrapper ww-page p-4 mb-5">
-            <div className="ww-modal">
-                <div className="ww-header modal-header">
-                    <h4>Capital Withdrawal Request</h4>
-                </div>
+        <div className="capital-payout-page mb-5" style={{ 
+            padding: '20px', 
+            maxWidth: '1400px', 
+            margin: '0 auto',
+            fontFamily: 'Segoe UI, Tahoma, Geneva, Verdana, sans-serif',
+            position: 'relative'
+        }}>
+            <ToastContainer
+                position="top-right"
+                autoClose={4000}
+                hideProgressBar={false}
+                newestOnTop={true}
+                closeOnClick
+                rtl={false}
+                pauseOnFocusLoss
+                draggable
+                pauseOnHover
+                theme="light"
+            />
 
-                <div className="ww-body">
-                    <CustomTable columns={columns} loading={false}>
-                        {tableRow}
-                    </CustomTable>
-
-                    <div className='ww-modal-contant'>
-                        <div className="ww-content meddle01">
-                            <div className="ww-balance balance-info mt-3">
-                                <span>Available balance (Remaining Capital)</span>
-                                <strong>
-                                    <span className="currency1" data-value={capitalRecord.remainingCapital}>
-                                        {formatCurrency(capitalRecord.remainingCapital)}
-                                    </span>
-                                </strong>
-                            </div>
-
-                            {/* Payment Methods */}
-                            <div className="ww-methods methods-grid mt-3">
-                                <div
-                                    className={`method-chip ${selectedMethod === 'BANK CARD' ? 'active' : ''}`}
-                                    onClick={() => !submitting && !verifyingOtp && setSelectedMethod('BANK CARD')}
-                                    style={{ cursor: submitting || verifyingOtp ? 'not-allowed' : 'pointer', opacity: submitting || verifyingOtp ? 0.6 : 1 }}
-                                >
-                                    <FaCreditCard />
-                                    <span>BANK CARD</span>
-                                </div>
-                                <div
-                                    className={`method-chip ${selectedMethod === 'USDT TRC20' ? 'active' : ''}`}
-                                    onClick={() => !submitting && !verifyingOtp && setSelectedMethod('USDT TRC20')}
-                                    style={{ cursor: submitting || verifyingOtp ? 'not-allowed' : 'pointer', opacity: submitting || verifyingOtp ? 0.6 : 1 }}
-                                >
-                                    <span>₿</span>
-                                    <span>USDT TRC20</span>
-                                </div>
-                            </div>
-
-                            {/* Method Details */}
-                            {selectedMethod === 'BANK CARD' && (
-                                <div className="ww-method-detail method-details">
-                                    <div className="bank-card-display d-flex justify-content-between align-items-center">
-                                        <div className="card-number">{accountNumber || 'No card added'}</div>
-                                        {accountNumber && (
-                                            <FaRegCopy
-                                                className="copy-icon"
-                                                style={{ cursor: 'pointer' }}
-                                                onClick={() => {
-                                                    navigator.clipboard.writeText(accountNumber);
-                                                    toast.success('Bank card number copied!');
-                                                }}
-                                            />
-                                        )}
-                                    </div>
-                                    {!accountNumber && (
-                                        <small className="text-danger">⚠️ Please add a bank card first</small>
-                                    )}
-                                </div>
-                            )}
-
-                            {selectedMethod === 'USDT TRC20' && (
-                                <div className="ww-method-detail method-details">
-                                    <div className="bank-card-display d-flex justify-content-between align-items-center">
-                                        <div className="address-value">{bep20Wallet || 'No address added'}</div>
-                                        {bep20Wallet && (
-                                            <FaRegCopy
-                                                className="copy-icon"
-                                                style={{ cursor: 'pointer' }}
-                                                onClick={() => {
-                                                    navigator.clipboard.writeText(bep20Wallet);
-                                                    toast.success('USDT address copied!');
-                                                }}
-                                            />
-                                        )}
-                                    </div>
-                                    {!bep20Wallet && (
-                                        <small className="text-danger">⚠️ Please add a USDT address first</small>
-                                    )}
-                                </div>
-                            )}
-
-                            {/* Amount Input */}
-                            <div className="ww-amount-area amount-area mb-3">
-                                <div className="amount-input-wrapper">
-                                    <span className="currency-symbol">{currencySymbols[selectedCurrency]}</span>
-                                    <input
-                                        type="number"
-                                        className="amount-input"
-                                        placeholder="Enter amount"
-                                        value={withdrawAmount}
-                                        onChange={(e) => setWithdrawAmount(e.target.value)}
-                                        disabled={submitting || verifyingOtp}
-                                    />
-                                </div>
-                            </div>
-
-                            {/* Quick Amount Buttons */}
-                            {validQuickAmounts.length > 0 && (
-                                <div className="ww-quick-amounts quick-amounts">
-                                    {validQuickAmounts.map((amt) => (
-                                        <button
-                                            key={amt}
-                                            className={`quick-amount-btn ${parseFloat(withdrawAmount) === amt ? 'active' : ''}`}
-                                            onClick={() => setWithdrawAmount(amt.toString())}
-                                            disabled={submitting || verifyingOtp}
-                                        >
-                                            {formatCurrency(amt)}
-                                        </button>
-                                    ))}
-                                </div>
-                            )}
-
-                            {/* OTP Section */}
-                            <div className="ww-otp-wrapper input-container01 mt-3">
-                                <span className="currency-symbol1">OTP</span>
-                                <span className="divider">|</span>
-                                <input
-                                    type="text"
-                                    className="amount-input"
-                                    placeholder="Enter 6-digit OTP"
-                                    maxLength="6"
-                                    value={otp}
-                                    onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
-                                    disabled={submitting || verifyingOtp}
-                                />
-                                <button
-                                    className="clear-btn"
-                                    onClick={sendOtp}
-                                    disabled={isOtpButtonDisabled()}
-                                    style={{
-                                        background: 'none',
-                                        border: 'none',
-                                        cursor: isOtpButtonDisabled() ? 'not-allowed' : 'pointer',
-                                        opacity: isOtpButtonDisabled() ? 0.6 : 1
-                                    }}
-                                    title={otpTimer > 0 ? `Wait ${Math.floor(otpTimer / 60)}:${(otpTimer % 60).toString().padStart(2, '0')}` : "Send OTP"}
-                                >
-                                    {sendingOtp ? (
-                                        <span className="otp-spinner-small"></span>
-                                    ) : otpTimer > 0 ? (
-                                        `${Math.floor(otpTimer / 60)}:${(otpTimer % 60).toString().padStart(2, '0')}`
-                                    ) : (
-                                        <IoSend />
-                                    )}
-                                </button>
-                            </div>
-
-                            {otpSent && otpTimer === 0 && (
-                                <small className="text-warning">⚠️ OTP expired. Please send again.</small>
-                            )}
-
-                            {/* Withdraw Button */}
-                            <button
-                                className="ww-button modal-button mt-3"
-                                onClick={verifyOtpAndWithdraw}
-                                disabled={isWithdrawDisabled()}
-                                style={{
-                                    opacity: isWithdrawDisabled() ? 0.6 : 1,
-                                    cursor: isWithdrawDisabled() ? 'not-allowed' : 'pointer'
-                                }}
-                            >
-                                {verifyingOtp ? 'Verifying OTP...' : submitting ? 'Processing...' : 'Withdraw Now'}
-                            </button>
-
-                            {/* Validation messages */}
-                            {capitalRecord.remainingCapital <= 0 && (
-                                <small className="text-danger d-block mt-2">⚠️ No remaining capital available for withdrawal</small>
-                            )}
-                            {(!accountNumber && selectedMethod === 'BANK CARD') && (
-                                <small className="text-danger d-block mt-2">⚠️ Please add a bank card to withdraw</small>
-                            )}
-                            {(!bep20Wallet && selectedMethod === 'USDT TRC20') && (
-                                <small className="text-danger d-block mt-2">⚠️ Please add a USDT address to withdraw</small>
-                            )}
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {/* Success Modal */}
-            {showSuccessModal && (
-                <div className="success-modal-overlay">
-                    <div className="success-modal">
-                        <div className="checkmark-circle">
-                            <svg className="checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                                <path d="M20 6L9 17L4 12" stroke="white" strokeWidth="3" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-                            </svg>
-                        </div>
-                        <div className="success-title">Withdrawal Request Submitted</div>
-                        <div className="success-amount currency1" data-value={successAmount}>
-                            {formatCurrency(successAmount)}
+            {/* CapAgreeModel Modal - Background freeze ke sath */}
+            {showCapAgreeModel && (
+                <div 
+                    className="modal-overlay" 
+                    style={{
+                        position: 'fixed',
+                        top: 0,
+                        left: 0,
+                        width: '100%',
+                        height: '100%',
+                        backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        zIndex: 99999,
+                        overflow: 'hidden', // 🔥 Important - scroll nahi hoga
+                        padding: '20px'
+                    }}
+                    onClick={(e) => {
+                        if (e.target === e.currentTarget) {
+                            setShowCapAgreeModel(false);
+                        }
+                    }}
+                >
+                    <div 
+                        className="modal-content000" 
+                        style={{
+                            maxWidth: '900px',
+                            width: '100%',
+                            maxHeight: '90vh',
+                            overflow: 'auto',
+                            position: 'relative',
+                            msOverflowStyle: 'none',
+                            scrollbarWidth: 'none'
+                        }}
+                    >
+                        {/* Hide scrollbar for modal content */}
+                        <style>
+                            {`
+                                .modal-content000::-webkit-scrollbar {
+                                    display: none;
+                                }
+                                .modal-content000 {
+                                    -ms-overflow-style: none;
+                                    scrollbar-width: none;
+                                }
+                            `}
+                        </style>
+                        <div style={{ padding: '0 20px 20px 20px' }}>
+                            <CapAgreeModel />
                         </div>
                     </div>
                 </div>
             )}
+
+            {/* Rest of your component remains same... */}
+            <h3 style={{ 
+                marginBottom: '20px', 
+                fontWeight: 'bold',
+                fontSize: '22px',
+                color: '#333'
+            }}>
+                Capital Withdrawal Request
+            </h3>
+
+            {/* Balance Cards */}
+            <div className="balance-cards" style={{ 
+                display: 'grid', 
+                gridTemplateColumns: 'repeat(3, 1fr)', 
+                gap: '15px',
+                marginBottom: '20px'
+            }}>
+                <div className="balance-card" style={{
+                    background: '#f8f9fa',
+                    padding: '15px 20px',
+                    borderRadius: '8px',
+                    border: '1px solid #e9ecef'
+                }}>
+                    <div style={{ fontSize: '14px', color: '#6c757d' }}>Investment Balance</div>
+                    <div style={{ fontSize: '22px', fontWeight: 'bold', color: '#28a745' }}>
+                        <span className="currency1" data-value={investmentBalance}>
+                            ${investmentBalance?.toFixed(2) || '0.00'}
+                        </span>
+                    </div>
+                </div>
+                <div className="balance-card" style={{
+                    background: '#f8f9fa',
+                    padding: '15px 20px',
+                    borderRadius: '8px',
+                    border: '1px solid #e9ecef'
+                }}>
+                    <div style={{ fontSize: '14px', color: '#6c757d' }}>Income Balance</div>
+                    <div style={{ fontSize: '22px', fontWeight: 'bold', color: '#17a2b8' }}>
+                        <span className="currency1" data-value={incomeBalance}>
+                            ${incomeBalance?.toFixed(2) || '0.00'}
+                        </span>
+                    </div>
+                </div>
+                <div className="balance-card" style={{
+                    background: '#f8f9fa',
+                    padding: '15px 20px',
+                    borderRadius: '8px',
+                    border: '1px solid #e9ecef'
+                }}>
+                    <div style={{ fontSize: '14px', color: '#6c757d' }}>Withdrawal Balance</div>
+                    <div style={{ fontSize: '22px', fontWeight: 'bold', color: '#ffc107' }}>
+                        <span className="currency1" data-value={withdrawalBalance}>
+                            ${withdrawalBalance?.toFixed(2) || '0.00'}
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            {/* Main Row - 2 Columns */}
+            <div className="main-row" style={{
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr',
+                gap: '25px',
+                marginBottom: '20px'
+            }}>
+                {/* Left Column - Form */}
+                <div className="left-column">
+                    <div className="capital-form" style={{
+                        background: 'white',
+                        padding: '20px',
+                        borderRadius: '12px',
+                        border: '1px solid #e9ecef'
+                    }}>
+                        <div className="withdrawal-display" style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            padding: '12px 15px',
+                            background: '#f0f4ff',
+                            borderRadius: '8px',
+                            marginBottom: '20px'
+                        }}>
+                            <span style={{ fontWeight: 'bold', fontSize: '15px', color: '#333' }}>Withdrawal Balance</span>
+                            <span style={{ fontSize: '22px', fontWeight: 'bold', color: '#667eea' }}>
+                                <span className="currency1" data-value={withdrawalBalance}>
+                                    ${withdrawalBalance?.toFixed(2) || '0.00'}
+                                </span>
+                            </span>
+                        </div>
+
+                        {/* Payment Mode */}
+                        <div className="payment-mode" style={{ marginBottom: '15px' }}>
+                            <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '8px', fontSize: '14px', color: '#333' }}>
+                                Select Payment Mode
+                            </label>
+                            <select
+                                value={selectedMethod}
+                                onChange={(e) => {
+                                    setSelectedMethod(e.target.value);
+                                    setOtpVerified(false);
+                                    setOtpSent(false);
+                                    setOtp('');
+                                }}
+                                style={{
+                                    width: '100%',
+                                    padding: '10px 15px',
+                                    borderRadius: '8px',
+                                    border: '1px solid #ddd',
+                                    fontSize: '14px',
+                                    background: '#f8f9fa'
+                                }}
+                            >
+                                <option value="">-- Select Mode --</option>
+                                <option value="INR">INR</option>
+                                <option value="USDT">USDT</option>
+                            </select>
+                        </div>
+
+                        {/* Show actual wallet details from session */}
+                        {selectedMethod === 'INR' && accountNumber && (
+                            <div className="method-details" style={{
+                                padding: '10px 15px',
+                                background: '#f8f9fa',
+                                borderRadius: '8px',
+                                marginBottom: '15px',
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                border: '1px solid #e9ecef'
+                            }}>
+                                <span style={{ fontSize: '13px', color: '#555' }}>
+                                    Account: {accountNumber}
+                                </span>
+                                <FiCopy 
+                                    onClick={() => {
+                                        navigator.clipboard.writeText(accountNumber);
+                                        toast.success('Account number copied!');
+                                    }}
+                                    style={{ cursor: 'pointer', color: '#667eea' }} 
+                                />
+                            </div>
+                        )}
+
+                        {selectedMethod === 'USDT' && walletAddress && (
+                            <div className="method-details" style={{
+                                padding: '10px 15px',
+                                background: '#f8f9fa',
+                                borderRadius: '8px',
+                                marginBottom: '15px',
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                border: '1px solid #e9ecef'
+                            }}>
+                                <span style={{ fontSize: '13px', color: '#555' }}>
+                                    Wallet: {walletAddress}
+                                </span>
+                                <FiCopy 
+                                    onClick={() => {
+                                        navigator.clipboard.writeText(walletAddress);
+                                        toast.success('Wallet address copied!');
+                                    }}
+                                    style={{ cursor: 'pointer', color: '#667eea' }} 
+                                />
+                            </div>
+                        )}
+
+                        {/* OTP Section */}
+                        <div className="otp-section">
+                            <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '8px', fontSize: '14px', color: '#333' }}>
+                                Enter OTP
+                            </label>
+                            <div style={{
+                                display: 'flex',
+                                gap: '10px',
+                                alignItems: 'center'
+                            }}>
+                                <input
+                                    type="text"
+                                    className="otp-input"
+                                    placeholder={otpSent ? "Enter OTP" : "Enter OTP"}
+                                    value={otp}
+                                    onChange={(e) => {
+                                        setOtp(e.target.value);
+                                        if (otpVerified) setOtpVerified(false);
+                                    }}
+                                    disabled={!otpSent}
+                                    style={{
+                                        flex: 1,
+                                        padding: '10px 15px',
+                                        borderRadius: '8px',
+                                        border: '1px solid #ddd',
+                                        fontSize: '15px',
+                                        background: otpSent ? 'white' : '#f8f9fa',
+                                        cursor: otpSent ? 'text' : 'not-allowed'
+                                    }}
+                                />
+                                <button
+                                    onClick={handleOTPAction}
+                                    disabled={isSendingOTP || withdrawalBalance <= 0}
+                                    style={{
+                                        padding: '10px 25px',
+                                        borderRadius: '8px',
+                                        border: 'none',
+                                        background: (isSendingOTP || withdrawalBalance <= 0) ? '#6c757d' : 
+                                                   (otpSent ? '#28a745' : '#667eea'),
+                                        color: 'white',
+                                        fontWeight: 'bold',
+                                        cursor: (isSendingOTP || withdrawalBalance <= 0) ? 'not-allowed' : 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '8px',
+                                        fontSize: '14px',
+                                        whiteSpace: 'nowrap',
+                                        minWidth: '120px',
+                                        justifyContent: 'center'
+                                    }}
+                                >
+                                    {isSendingOTP ? (
+                                        'PROCESSING...'
+                                    ) : otpSent ? (
+                                        ' VERIFY OTP'
+                                    ) : (
+                                        ' SEND OTP'
+                                    )}
+                                </button>
+                            </div>
+                            {otpSent && !otpVerified && (
+                                <div style={{ color: '#ffc107', fontSize: '12px', marginTop: '5px' }}>
+                                    OTP sent! Please check your email.
+                                </div>
+                            )}
+                            {otpVerified && (
+                                <div style={{ color: '#28a745', fontSize: '13px', marginTop: '5px', fontWeight: 'bold' }}>
+                                    OTP Verified Successfully!
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Note */}
+                        <div className="note" style={{
+                            fontSize: '13px',
+                            color: "red"
+                        }}>
+                            <strong>Note:</strong> Capital Payout Temporarily Suspended
+                        </div>
+
+                        {/* Terms */}
+                        <div className="terms" style={{ 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            gap: '10px', 
+                            marginBottom: '15px' 
+                        }}>
+                            <input
+                                type="checkbox"
+                                id="agreeTerms"
+                                checked={agreeTerms}
+                                onChange={(e) => setAgreeTerms(e.target.checked)}
+                                style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                            />
+                            <label htmlFor="agreeTerms" style={{ fontSize: '14px', color: '#333', cursor: 'pointer' }}>
+                                I agree to the terms and conditions
+                            </label>
+                        </div>
+
+                        {/* Buttons */}
+                        <div className="action-buttons" style={{
+                            display: 'flex',
+                            gap: '12px'
+                        }}>
+                            <button
+                                onClick={handleWithdrawAll}
+                                disabled={isSubmitting || !otpVerified || withdrawalBalance <= 0}
+                                style={{
+                                    flex: 1,
+                                    padding: '12px',
+                                    borderRadius: '8px',
+                                    border: 'none',
+                                    background: (isSubmitting || !otpVerified || withdrawalBalance <= 0) ? '#6c757d' : '#28a745',
+                                    color: 'white',
+                                    fontWeight: 'bold',
+                                    fontSize: '16px',
+                                    cursor: (isSubmitting || !otpVerified || withdrawalBalance <= 0) ? 'not-allowed' : 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: '8px'
+                                }}
+                            >
+                                {isSubmitting ? 'PROCESSING...' : ' SUBMIT'}
+                            </button>
+                            <button
+                                onClick={handleCancel}
+                                style={{
+                                    flex: 1,
+                                    padding: '12px',
+                                    borderRadius: '8px',
+                                    border: 'none',
+                                    background: '#dc3545',
+                                    color: 'white',
+                                    fontWeight: 'bold',
+                                    fontSize: '16px',
+                                    cursor: 'pointer'
+                                }}
+                            >
+                                CANCEL
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="note-bottom" style={{
+                        background: '#fff3cd',
+                        color: '#ff0000',
+                        padding: '10px 15px',
+                        borderRadius: '6px',
+                        fontSize: '13px',
+                        border: '1px solid #ffc107',
+                        marginTop: '15px'
+                    }}>
+                        <strong>Note:</strong> If the investment amount falls below $100, both IB income and level income must stop immediately
+                    </div>
+                </div>
+
+                {/* Right Column - Notice */}
+                <div className="right-column">
+                    <div className="notice-to-investors" style={{
+                        background: '#f8d7da',
+                        color: '#721c24',
+                        padding: '20px',
+                        borderRadius: '8px',
+                        border: '1px solid #f5c6cb',
+                        height: '100%'
+                    }}>
+                        <h5 style={{ 
+                            fontWeight: 'bold', 
+                            marginBottom: '15px',
+                            fontSize: '16px',
+                            borderBottom: '1px solid #f5c6cb',
+                            paddingBottom: '10px'
+                        }}>
+                            Notice to Investors
+                        </h5>
+                        <p style={{ marginBottom: '10px', fontSize: '14px' }}>
+                            <strong>Dear Investor,</strong>
+                        </p>
+                        <p style={{ marginBottom: '10px', fontSize: '14px', lineHeight: '1.6', color: "#000" }}>
+                            As per the Investment Agreement executed between you and the Company, the investment plan was structured for a fixed tenure, with returns and other benefits intended to be realized upon successful completion of the agreed maturity period.
+                        </p>
+                        <p style={{ marginBottom: '10px', fontSize: '14px', lineHeight: '1.6', color: "#000" }}>
+                            Requests for premature termination or withdrawal before the contractual maturity date may materially affect the Company's financial planning, as invested funds may have already been allocated to long-term healthcare projects, infrastructure, operations, and other revenue-generating business activities.
+                        </p>
+                        <p style={{ marginBottom: '10px', fontSize: '14px', lineHeight: '1.6', color: "#000" }}>
+                            Accordingly, where an investor elects to terminate the agreement before maturity, the settlement of the account shall be carried out strictly in accordance with the terms and conditions of the executed Investment Agreement.
+                        </p>
+
+                        <div style={{padding: "15px", background: "#f9c79f"}}>
+                            <p style={{ marginBottom: '10px', fontSize: '13px', fontWeight: 'bold' }}>
+                                Settlement calculation shall take into account:
+                            </p>
+                            <ul style={{ marginBottom: '10px', marginLeft: "15px", fontSize: '13px', lineHeight: '1.6' }}>
+                                <li>The total amount invested by the investor;</li>
+                                <li>The total amount already received by the investor from the Company; and</li>
+                                <li>Any deductions, adjustments, charges, or other consequences expressly provided under the Investment Agreement and applicable law.</li>
+                            </ul>
+                        </div>
+
+                        <p style={{ marginBottom: '10px', fontSize: '13px', lineHeight: '1.6', fontStyle: 'italic' }}>
+                            The final settlement amount, if any, will be determined after verification of the investor's account and contractual obligations. Such settlement shall not be construed as a waiver of any rights or obligations of either party under the Investment Agreement or applicable law.
+                        </p>
+                        <hr style={{ margin: '10px 0' }} />
+                        <p style={{ marginBottom: '0', fontSize: '12px', fontWeight: 'bold' }}>
+                            <strong>Important:</strong> This notice should be read together with the executed Investment Agreement, which shall prevail in the event of any inconsistency.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            {/* Table Section */}
+            <div className="table-section" style={{
+                background: 'white',
+                padding: '20px',
+                borderRadius: '12px',
+                border: '1px solid #e9ecef',
+                marginTop: '10px'
+            }}>
+                <div className="entries-search-bar entries-control" style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginBottom: '15px',
+                    flexWrap: 'wrap',
+                    gap: '10px'
+                }}>
+                    <div className="entries-control" style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '10px'
+                    }}>
+                        <label style={{ fontSize: '14px', color: '#4a5568' }}>Show entries:</label>
+                        <select 
+                            className="form-select" 
+                            value={pageSize} 
+                            onChange={e => {
+                                setPageSize(Number(e.target.value));
+                                setPageIndex(1);
+                            }}
+                            style={{
+                                padding: '6px 32px 6px 12px',
+                                border: '1px solid #e2e8f0',
+                                borderRadius: '6px',
+                                fontSize: '14px',
+                                minWidth: '70px'
+                            }}
+                        >
+                            {[10, 25, 50, 75, 100].map(n => (
+                                <option key={n} value={n}>{n}</option>
+                            ))}
+                        </select>
+                    </div>
+                    <div className="search-wrapper" style={{ position: 'relative' }}>
+                        <input
+                            className="form-control search-input"
+                            placeholder="Search records..."
+                            value={searchTerm}
+                            onChange={e => setSearchTerm(e.target.value)}
+                            style={{
+                                padding: '8px 38px 8px 14px',
+                                border: '1px solid #e2e8f0',
+                                borderRadius: '6px',
+                                fontSize: '14px',
+                                width: '260px'
+                            }}
+                        />
+                    </div>
+                </div>
+
+                <CustomTable columns={columns} loading={loading} emptyMessage="No withdrawal history found">
+                    {currentRecords.length > 0 ? (
+                        currentRecords.map((item, index) => {
+                            return (
+                                <tr key={item.id || index}>
+                                    <td style={{ 
+                                        padding: '10px 12px', 
+                                        textAlign: 'center', 
+                                        border: '1px solid #e9ecef',
+                                        fontSize: '13px'
+                                    }}>
+                                        {startIndex + index + 1}
+                                    </td>
+                                    <td style={{ 
+                                        padding: '10px 12px', 
+                                        textAlign: 'center', 
+                                        border: '1px solid #e9ecef',
+                                        fontSize: '13px',
+                                        fontWeight: 'bold',
+                                        color: '#dc3545'
+                                    }}>
+                                        <span className="currency1" data-value={item.debit}>
+                                            ${item.debit?.toFixed(2) || '0.00'}
+                                        </span>
+                                    </td>
+                                    <td style={{ 
+                                        padding: '10px 12px', 
+                                        textAlign: 'center', 
+                                        border: '1px solid #e9ecef',
+                                        fontSize: '13px'
+                                    }}>
+                                        {item.date}
+                                    </td>
+                                    <td style={{ 
+                                        padding: '10px 12px', 
+                                        textAlign: 'center', 
+                                        border: '1px solid #e9ecef',
+                                        fontSize: '13px'
+                                    }}>
+                                        {item.type}
+                                    </td>
+                                    <td style={{ 
+                                        padding: '10px 12px', 
+                                        textAlign: 'center', 
+                                        border: '1px solid #e9ecef',
+                                        fontSize: '13px'
+                                    }}>
+                                        {item.remark}
+                                    </td>
+                                    <td style={{ 
+                                        padding: '10px 12px', 
+                                        textAlign: 'center', 
+                                        border: '1px solid #e9ecef',
+                                        fontSize: '13px'
+                                    }}>
+                                        <span style={{
+                                            padding: '4px 12px',
+                                            borderRadius: '20px',
+                                            background: getStatusColor(item.status),
+                                            color: 'white',
+                                            fontSize: '12px',
+                                            fontWeight: '500',
+                                            display: 'inline-block'
+                                        }}>
+                                            {item.status}
+                                        </span>
+                                    </td>
+                                </tr>
+                            );
+                        })
+                    ) : (
+                        <tr>
+                            <td colSpan={columns.length} style={{
+                                padding: '30px',
+                                textAlign: 'center',
+                                color: '#6c757d',
+                                border: '1px solid #e9ecef',
+                                fontSize: '14px'
+                            }}>
+                                {loading ? "Loading..." : "No withdrawal history found"}
+                            </td>
+                        </tr>
+                    )}
+                </CustomTable>
+
+                {totalPages > 1 && (
+                    <Pagination
+                        pageIndex={pageIndex}
+                        totalPages={totalPages}
+                        onPageChange={setPageIndex}
+                        siblingCount={1}
+                        showFirstLast={true}
+                    />
+                )}
+            </div>
         </div>
     );
 };
 
-export default WalletWithdrawal;
+export default CapitalWithdrawalRequest;

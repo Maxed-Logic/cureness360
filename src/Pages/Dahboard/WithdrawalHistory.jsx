@@ -12,7 +12,7 @@ const WithdrawalHistory = () => {
     const [itemsPerPage, setItemsPerPage] = useState(15);
     const [pageIndex, setPageIndex] = useState(1);
 
-    const getRegNo = () => localStorage.getItem('regno');
+    const getRegNo = () => sessionStorage.getItem('regno');
 
     const fetchWithdrawalHistory = async () => {
         setLoading(true);

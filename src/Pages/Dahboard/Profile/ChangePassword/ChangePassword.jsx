@@ -5,9 +5,9 @@ import apiClient from '../../../../api/apiClient';
 import './ChangePassword.css';
 
 const ChangePassword = () => {
-  // ✅ Get loginid and regno from localStorage
+  // ✅ Get loginid and regno from sessionStorage
   const getLoginId = () => {
-    const storedUserData = localStorage.getItem('userData');
+    const storedUserData = sessionStorage.getItem('userData');
     if (storedUserData) {
       try {
         const parsed = JSON.parse(storedUserData);
@@ -15,16 +15,16 @@ const ChangePassword = () => {
         if (parsed.me) return parsed.me;
       } catch (e) {}
     }
-    const user = JSON.parse(localStorage.getItem('user'));
+    const user = JSON.parse(sessionStorage.getItem('user'));
     if (user?.loginid) return user.loginid;
     if (user?.me) return user.me;
     return 'india';
   };
 
   const loginid = getLoginId();
-  const regno = JSON.parse(localStorage.getItem('user'))?.Regno || 
-                JSON.parse(localStorage.getItem('user'))?.regno || 
-                localStorage.getItem('regno');
+  const regno = JSON.parse(sessionStorage.getItem('user'))?.Regno || 
+                JSON.parse(sessionStorage.getItem('user'))?.regno || 
+                sessionStorage.getItem('regno');
 
   // State for Login Password Change
   const [loginOtp, setLoginOtp] = useState('');
@@ -335,7 +335,7 @@ const ChangePassword = () => {
       <div className="password-container mb-5">
         {/* Change Login Password Section */}
         <div className="password-card">
-          <h2 className="card-title">Change Login Password</h2>
+          <h2 className="card-title text-white">Change Login Password</h2>
           <div className='f-contaoner'>
             <div className="form-group">
               <label className="form-label">Enter OTP</label>
@@ -431,7 +431,7 @@ const ChangePassword = () => {
 
         {/* Change Master Password Section */}
         <div className="password-card">
-          <h2 className="card-title">Change Master Password</h2>
+          <h2 className="card-title text-white">Change Master Password</h2>
           <div className='f-contaoner'>
             <div className="form-group">
               <label className="form-label">Enter OTP</label>

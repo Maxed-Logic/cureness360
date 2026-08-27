@@ -7,8 +7,7 @@ import "../../assets/Css/Auth.css";
 import apiClient from "../../api/apiClient";
 
 // Images
-import logoImg from "../../assets/images/logo.png";
-import logo2Img from "../../assets/images/logo2.png";
+
 import signupImage from "../../assets/images/resource/appoinment.png";
 
 const Signup = () => {
@@ -16,9 +15,7 @@ const Signup = () => {
   const [loading, setLoading] = useState(false);
   const [isSticky, setIsSticky] = useState(false);
   const [isSearchActive, setIsSearchActive] = useState(false);
-  const [isInfoGroupActive, setIsInfoGroupActive] = useState(false);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  
+
   // ADD THESE STATES - YEH MISSING THA
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [registeredUser, setRegisteredUser] = useState(null);
@@ -45,11 +42,8 @@ const Signup = () => {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const refCode = params.get("ref");
-    console.log("🔍 URL params:", window.location.search);
-    console.log("🔍 refCode from URL:", refCode);
 
     if (refCode && !formData.referrer_Id) {
-      console.log("✅ Auto-filling sponsor ID with:", refCode);
       setFormData(prev => ({
         ...prev,
         referrer_Id: refCode,
@@ -57,6 +51,19 @@ const Signup = () => {
       }));
     }
   }, []);
+
+  // 🔥 Check if sponsor is valid
+  const isSponsorValid = formData.sponsorName &&
+    formData.sponsorName !== "Invalid Sponsor" &&
+    formData.sponsorName !== "Not Found" &&
+    formData.sponsorName !== "";
+
+  // 🔥 Check if form is complete
+  const isFormComplete = formData.fName &&
+    formData.email &&
+    formData.mobile &&
+    formData.password &&
+    formData.mobile.length === 10;
 
   // ========== 2. JAB SPONSOR ID CHANGE HO, SPONSOR NAME FETCH KARO ==========
   useEffect(() => {
@@ -88,15 +95,23 @@ const Signup = () => {
     return () => clearTimeout(timer);
   }, [formData.referrer_Id]);
 
+
+
   const handleChange = (e) => {
     const { name, value } = e.target;
-    if (name === "introRegNo") {
-      setFormData((prev) => ({ ...prev, referrer_Id: value }));
-    } else {
-      setFormData((prev) => ({ ...prev, [name]: value }));
-    }
-  };
 
+    setFormData((prev) => {
+      // 🔥 Jab introRegNo change ho toh dono fields update karo
+      if (name === "introRegNo") {
+        return {
+          ...prev,
+          introRegNo: value,
+          referrer_Id: value,    // ✅ Dono ko sync karo
+        };
+      }
+      return { ...prev, [name]: value };
+    });
+  };
   // ADD COPY FUNCTION
   const handleCopy = (text, field) => {
     navigator.clipboard.writeText(text);
@@ -113,7 +128,6 @@ const Signup = () => {
 
   const handleSignup = async (e) => {
     e.preventDefault();
-        console.log("🔴 Signup button clicked!"); // YEH ADD KAR
     if (!formData.sponsorName || formData.sponsorName === "Invalid Sponsor") {
       toast.error("Valid Sponsor ID daalein!");
       return;
@@ -136,15 +150,17 @@ const Signup = () => {
       Affiliate_Level: formData.affiliate_Level,
       Referrer_Id: formData.referrer_Id,
     };
+
+    // console.log("signup",payload)
     try {
       const response = await apiClient.post("/Authentication/register", payload);
       if (response.data.success === true || response.status === 200) {
         const userData = response.data.data;
-        localStorage.setItem("token", response.data.token || "authenticated_via_signup");
-        localStorage.setItem("user", JSON.stringify(userData));
-        localStorage.setItem("regno", userData.Regno);
-        localStorage.setItem("isLoggedIn", "true");
-        
+        sessionStorage.setItem("token", response.data.token || "authenticated_via_signup");
+        sessionStorage.setItem("user", JSON.stringify(userData));
+        sessionStorage.setItem("regno", userData.Regno);
+        sessionStorage.setItem("isLoggedIn", "true");
+
         // SET REGISTERED USER FOR MODAL - YEH IMPORTANT THA
         setRegisteredUser({
           regno: userData.Regno,
@@ -156,11 +172,11 @@ const Signup = () => {
           sponsorName: formData.sponsorName,
           password: formData.password,
         });
-        
+
         // SHOW MODAL - REDIRECT HATAYA
         setShowSuccessModal(true);
         toast.success("Registration Successful!");
-        
+
         // NO NAVIGATE HERE - MODAL SHOW KARO
         // setTimeout(() => navigate("/dashboard"), 800); // YE HATANA HAI
       } else {
@@ -227,7 +243,7 @@ const Signup = () => {
                     </div>
                     <div className="col-lg-12">
                       <div className="form-box">
-                        <input type="text" value={formData.sponsorName} readOnly placeholder="Sponsor Name" className="readonly-input" style={{ color: "#008202",fontWeight: "600" }} />
+                        <input type="text" value={formData.sponsorName} readOnly placeholder="Sponsor Name" className="readonly-input" style={{ color: "#008202", fontWeight: "600" }} />
                       </div>
                     </div>
                     <div className="col-lg-12">
@@ -243,7 +259,7 @@ const Signup = () => {
                     <div className="col-lg-12">
                       <div className="form-box d-flex" style={{ gap: "10px" }}>
                         <div className="mt-3">
-                        <span style={{ padding: "20px 20px", background: "#f0f0f0", borderRadius: "15px" }}>+91</span></div>
+                          <span style={{ padding: "20px 20px", background: "#f0f0f0", borderRadius: "15px" }}>+91</span></div>
                         <input type="text" name="mobile" placeholder="Mobile Number*" maxLength="10" value={formData.mobile} onChange={handleChange} required style={{ flex: 1 }} />
                       </div>
                     </div>
@@ -258,11 +274,19 @@ const Signup = () => {
                       </p>
                     </div>
                     <div className="col-lg-12">
-                      
-                        <button type="submit" className="laboix-btn" disabled={loading}>
-                          {loading ? "Creating Account..." : "Signup Now"} <svg xmlns="http://www.w3.org/2000/svg" width="20" height="17" fill="currentColor" class="bi bi-arrow-return-right" viewBox="0 0 16 16"> <path fill-rule="evenodd" d="M1.5 1.5A.5.5 0 0 0 1 2v4.8a2.5 2.5 0 0 0 2.5 2.5h9.793l-3.347 3.346a.5.5 0 0 0 .708.708l4.2-4.2a.5.5 0 0 0 0-.708l-4-4a.5.5 0 0 0-.708.708L13.293 8.3H3.5A1.5 1.5 0 0 1 2 6.8V2a.5.5 0 0 0-.5-.5"/></svg>
-                        </button>
-                   
+
+                      <button
+                        type="submit"
+                        className="laboix-btn"
+                        disabled={loading || !isSponsorValid || !isFormComplete}
+                        style={{
+                          opacity: (!isSponsorValid || !isFormComplete) ? 0.6 : 1,
+                          cursor: (!isSponsorValid || !isFormComplete) ? "not-allowed" : "pointer"
+                        }}
+                      >
+                        {loading ? "Creating Account..." : "Signup Now"} <svg xmlns="http://www.w3.org/2000/svg" width="20" height="17" fill="currentColor" class="bi bi-arrow-return-right" viewBox="0 0 16 16"> <path fill-rule="evenodd" d="M1.5 1.5A.5.5 0 0 0 1 2v4.8a2.5 2.5 0 0 0 2.5 2.5h9.793l-3.347 3.346a.5.5 0 0 0 .708.708l4.2-4.2a.5.5 0 0 0 0-.708l-4-4a.5.5 0 0 0-.708.708L13.293 8.3H3.5A1.5 1.5 0 0 1 2 6.8V2a.5.5 0 0 0-.5-.5" /></svg>
+                      </button>
+
                     </div>
                   </div>
                 </form>
@@ -281,15 +305,15 @@ const Signup = () => {
               <div className="Registration-text">Registration Successfully</div>
               <button className="modal-close02" onClick={handleModalClose}>×</button>
             </div>
-            
+
             <div className="modal-body02">
-          
-              
+
+
               <div className="user-details-card02">
                 <div className="Account-text"><FaIdCard /> Your Account Details</div>
 
 
-                                <div className="detail-row02">
+                <div className="detail-row02">
                   <div className="detail-label02">
                     <FaUser /> Sponsor ID:
                   </div>
@@ -336,14 +360,14 @@ const Signup = () => {
 
 
               </div>
-              
+
               <div className="modal-actions02">
-                <Link to="login">
-                <button className="btn-dashboard02" onClick={handleModalClose}>
-                  LOGIN
-                </button>  
-                </Link>          
-              </div>  
+                <Link to="/login">
+                  <button className="btn-dashboard02" onClick={handleModalClose}>
+                    LOGIN
+                  </button>
+                </Link>
+              </div>
             </div>
           </div>
         </div>
