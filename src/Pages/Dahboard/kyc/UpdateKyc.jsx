@@ -402,39 +402,41 @@ const UpdateKyc = () => {
             <FaUser className="card-icon" />
             <h3>Personal Information</h3>
           </div>
-          <div className="kyc-card-body">
+          <div className="kyc-card-body " >
             <div className="row g-3">
               <div className="col-md-4">
-                <label className="form-label fw-bold small text-uppercase text-muted">Login ID</label>
-                <div className="form-control bg-light fw-bold">{formData.loginId || 'N/A'}</div>
+                <label className=" form-label fw-bold small text-uppercase text-muted ">Login ID</label>
+                <div className="form-control fw-bold curs">{formData.loginId || 'N/A'}</div>
               </div>
               <div className="col-md-4">
-                <label className="form-label fw-bold small text-uppercase text-muted">Full Name <span className="text-danger">*</span></label>
-                <input
+                <label className="form-label fw-bold small text-uppercase text-muted ">Full Name <span className="text-danger">*</span></label>
+                <input clas
                   type="text"
                   name="fullName"
                   value={formData.fullName}
                   onChange={handleChange}
-                  className="form-control"
+                  className="form-control curs"
                   placeholder="Enter full name"
+                  readOnly
                 />
               </div>
               <div className="col-md-4">
                 <label className="form-label fw-bold small text-uppercase text-muted">Date Of Joining</label>
-                <div className="form-control bg-light fw-bold">{formData.dateOfJoining || 'N/A'}</div>
+                <div className="form-control fw-bold curs">{formData.dateOfJoining || 'N/A'}</div>
               </div>
             </div>
 
             <div className="row g-3 mt-1 mt-sm-0 mt-md-0 mt-lg-1">
               <div className="col-md-6">
-                <label className="form-label fw-bold small text-uppercase text-muted">Mobile Number <span className="text-danger">*</span></label>
+                <label className="form-label fw-bold small text-uppercase text-muted ">Mobile Number <span className="text-danger">*</span></label>
                 <input
                   type="text"
                   name="mobileNumber"
                   value={formData.mobileNumber}
                   onChange={handleChange}
-                  className="form-control"
+                  className="form-control curs"
                   placeholder="Enter mobile number"
+                  readOnly
                 />
               </div>
               <div className="col-md-6">
@@ -444,8 +446,9 @@ const UpdateKyc = () => {
                   name="email"
                   value={formData.email}
                   onChange={handleChange}
-                  className="form-control"
+                  className="form-control curs"
                   placeholder="Enter email"
+                  readOnly
                 />
               </div>
             </div>
@@ -523,8 +526,9 @@ const UpdateKyc = () => {
                   name="walletAddress"
                   onChange={handleChange}
                   value={formData.walletAddress}
-                  className="form-control"
+                  className="form-control curs"
                   placeholder="Enter BEP 20 wallet address"
+                  readOnly
                 />
               </div>
               <div className="col-md-4">
@@ -534,8 +538,9 @@ const UpdateKyc = () => {
                   name="accountHolderName"
                   value={formData.accountHolderName}
                   onChange={handleChange}
-                  className="form-control"
+                  className="form-control curs"
                   placeholder="Enter account holder name"
+                  readOnly
                 />
               </div>
               <div className="col-md-4">
@@ -545,8 +550,9 @@ const UpdateKyc = () => {
                   name="bankAccountNumber"
                   value={formData.bankAccountNumber}
                   onChange={handleChange}
-                  className="form-control"
+                  className="form-control curs"
                   placeholder="Enter account number"
+                  readOnly
                 />
               </div>
             </div>
@@ -559,8 +565,9 @@ const UpdateKyc = () => {
                   name="bankName"
                   value={formData.bankName}
                   onChange={handleChange}
-                  className="form-control"
+                  className="form-control curs"
                   placeholder="Enter bank name"
+                  readOnly
                 />
               </div>
               <div className="col-md-4">
@@ -570,8 +577,9 @@ const UpdateKyc = () => {
                   name="ifscCode"
                   value={formData.ifscCode}
                   onChange={handleChange}
-                  className="form-control"
+                  className="form-control curs"
                   placeholder="Enter IFSC code"
+                  readOnly
                 />
               </div>
               <div className="col-md-4">
@@ -581,8 +589,9 @@ const UpdateKyc = () => {
                   name="investmentFund"
                   value={formData.investmentFund}
                   onChange={handleChange}
-                  className="form-control"
+                  className="form-control curs"
                   placeholder="Enter amount in USD"
+                  readOnly
                 />
               </div>
             </div>
@@ -595,8 +604,9 @@ const UpdateKyc = () => {
                   name="overallIncome"
                   value={formData.overallIncome}
                   onChange={handleChange}
-                  className="form-control"
+                  className="form-control curs"
                   placeholder="Enter overall income"
+                  readOnly
                 />
               </div>
               <div className="col-md-4">

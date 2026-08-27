@@ -353,7 +353,7 @@ const Dashboard = () => {
         let liveRate = 0;
 
         if (selectedMethod === 'BANK CARD') {
-            const card = accountNumber || sessionStorage.getItem('accountNumber');
+            const card = accountNumber;
             if (!card) {
                 toast.error('No bank card added. Please add a card first.');
                 return;
@@ -362,7 +362,7 @@ const Dashboard = () => {
             payMode = 'inr';
             liveRate = usdToInrRate || 90;
         } else if (selectedMethod === 'USDT TRC20') {
-            const address = walletAddress || sessionStorage.getItem('bep20Wallet');
+            const address = walletAddress ;
             if (!address) {
                 toast.error('No USDT TRC20 address added. Please add an address first.');
                 return;
@@ -694,7 +694,7 @@ const Dashboard = () => {
                                                 setWithdrawAmount(payoutAmount);
                                                 setShowWithdrawModal(true);
                                             }}
-                                            disabled={payoutLoading || displayBalance <= 0}
+                                            // disabled={payoutLoading || displayBalance <= 0}
                                         >
                                             Payout
                                         </button>
@@ -763,6 +763,7 @@ const Dashboard = () => {
                                     </div>
 
                                     <input
+
                                         type="text"
                                         placeholder={walletAddress ? walletAddress : "No wallet found"}
                                         value={selectedMethod === 'USDT TRC20' ? userData?.accountNo : (selectedMethod === 'BANK CARD' ? userData?.upiNumber : '')}
@@ -771,7 +772,7 @@ const Dashboard = () => {
                                         style={{
                                             backgroundColor: (selectedMethod === 'USDT TRC20' && walletAddress) || (selectedMethod === 'BANK CARD' && accountNumber) ? '#f0f4ff' : '#f5f5f5',
                                             border: (selectedMethod === 'USDT TRC20' && walletAddress) || (selectedMethod === 'BANK CARD' && accountNumber) ? '1px solid #242be0df' : '1px solid #ddd',
-                                            color: (selectedMethod === 'USDT TRC20' && walletAddress) || (selectedMethod === 'BANK CARD' && accountNumber) ? '#1a237e' : '#999',
+                                            // color: (selectedMethod === 'USDT TRC20' && walletAddress) || (selectedMethod === 'BANK CARD' && accountNumber) ? '#1a237e' : '#999',
                                             fontWeight: (selectedMethod === 'USDT TRC20' && walletAddress) || (selectedMethod === 'BANK CARD' && accountNumber) ? '600' : 'normal',
                                             cursor: 'not-allowed',
                                             width: '100%',
