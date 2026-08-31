@@ -59,45 +59,34 @@ const Dashboard = () => {
         setShowKycModal(false);
         sessionStorage.setItem('kycModalClosed', 'true');
     };
+const payoutStatus = useMemo(() => {
+    console.log("🔍 ===== PAYOUT STATUS DEBUG =====");
+    console.log("userData?.userPayoutOnOff:", userData?.userPayoutOnOff);
+    console.log("userData?.teamIdPayoutOnOff:", userData?.teamIdPayoutOnOff);
+    console.log("userData?.payoutOnOffByAdmin:", userData?.payoutOnOffByAdmin);
+    
+    const userPayout = userData?.userPayoutOnOff;
+    const teamPayout = userData?.teamIdPayoutOnOff0;
+    const adminPayout = userData?.payoutOnOffByAdmin  ;
+    
+    console.log("userPayout (boolean):", userPayout);
+    console.log("teamPayout (boolean):", teamPayout);
+    console.log("adminPayout (boolean):", adminPayout);
+    console.log("🔍 ==============================");
 
-    const loadBankDetailsFromSession = () => {
-        try {
-            const savedData = sessionStorage.getItem("bankDetails");
-            if (savedData) {
-                const bankDetails = JSON.parse(savedData);
-                if (bankDetails.wallwtaddresh) {
-                    setWalletAddress(bankDetails.wallwtaddresh);
-                }
-                if (bankDetails.accountNumber) {
-                    setAccountNumber(bankDetails.accountNumber);
-                }
-                return bankDetails;
-            } else {
-                console.warn("No bank details found in sessionStorage");
-                return null;
-            }
-        } catch (error) {
-            console.error("Error loading bank details from session:", error);
-            return null;
-        }
-    };
-
-    const payoutStatus = useMemo(() => {
-        const userPayout = userData?.userPayoutOnOff === 1;
-        const teamPayout = userData?.teamIdPayoutOnOff === 1;
-        const adminPayout = userData?.payoutOnOffByAdmin === 1;
-
-        if (!adminPayout) {
-            return { active: false, message: "Payout has been turned off by admin, Please contact support." };
-        } else if (!teamPayout) {
-            return { active: false, message: "Team payout has been turned off, Please contact support." };
-        } else if (!userPayout) {
-            return { active: false, message: "User payout has been turned off, Please contact support." };
-        } else {
-            return { active: true, message: "" };
-        }
-    }, [userData]);
-
+    // ✅ TEAM PEHLE CHECK KARO
+    if (!teamPayout) {
+        return { active: false, message: "Team payout has been turned off, Please contact support." };
+    }
+    if (!adminPayout) {
+        return { active: false, message: "Payout has been turned off by admin, Please contact support." };
+    }
+    if (!userPayout) {
+        return { active: false, message: "User payout has been turned off, Please contact support." };
+    } else {
+        return { active: true, message: "" };
+    }
+}, [userData]);
     // Helper to get loginid
     const getLoginId = () => {
         const storedUserData = sessionStorage.getItem('userData');
@@ -353,7 +342,7 @@ const Dashboard = () => {
         let liveRate = 0;
 
         if (selectedMethod === 'BANK CARD') {
-            const card = accountNumber;
+          const card = userData?.upiNumber;
             if (!card) {
                 toast.error('No bank card added. Please add a card first.');
                 return;
@@ -362,7 +351,7 @@ const Dashboard = () => {
             payMode = 'inr';
             liveRate = usdToInrRate || 90;
         } else if (selectedMethod === 'USDT TRC20') {
-            const address = walletAddress ;
+            const address = userData?.walletid ;
             if (!address) {
                 toast.error('No USDT TRC20 address added. Please add an address first.');
                 return;
@@ -455,11 +444,11 @@ const Dashboard = () => {
         }
     };
 
-    useEffect(() => {
-        if (showWithdrawModal) {
-            loadBankDetailsFromSession();
-        }
-    }, [showWithdrawModal]);
+    // useEffect(() => {
+    //     if (showWithdrawModal) {
+    //         loadBankDetailsFromSession();
+    //     }
+    // }, [showWithdrawModal]);
 
     return (
         <>
@@ -875,46 +864,32 @@ const Dashboard = () => {
                                             return;
                                         }
 
-                                        if (amountNum < 100) {
-                                            Swal.fire({
-                                                icon: 'warning',
-                                                html: `
-                                                    <div style="text-align: center; padding: 10px 0;">
-                                                        <div style="font-size: 18px; font-weight: 600; color: #e74c3c; margin-bottom: 10px;">
-                                                            $${amountNum} is too small!
-                                                        </div>
-                                                        <div style="font-size: 15px; color: #2d3748; margin-bottom: 5px;">
-                                                            Minimum withdrawal is <strong style="color: #28a745;">$100</strong>
-                                                        </div>
-                                                        <div style="font-size: 14px; color: #6c757d; margin: 10px 0;">
-                                                            You need <strong style="color: #e74c3c;">$${(100 - amountNum).toFixed(2)}</strong> more
-                                                        </div>
-                                                        <div style="background: #f8f9fa; padding: 10px; border-radius: 10px; margin-top: 10px;">
-                                                            <div style="width: 100%; height: 8px; background: #e9ecef; border-radius: 10px; overflow: hidden;">
-                                                                <div style="width: ${(amountNum / 100) * 100}%; height: 100%; background: linear-gradient(90deg, #ff6b6b, #ffd93d); border-radius: 10px;"></div>
-                                                            </div>
-                                                            <div style="margin-top: 5px; font-size: 12px; color: #6c757d;">
-                                                                ${Math.round((amountNum / 100) * 100)}% Complete
-                                                            </div>
-                                                        </div>
-                                                        <div style="margin-top: 15px; font-size: 13px; color: #6c757d;">
-                                                            Keep earning! You can do it!
-                                                        </div>
-                                                    </div>
-                                                `,
-                                                showConfirmButton: true,
-                                                confirmButtonText: 'OK, I will earn more!',
-                                                confirmButtonColor: '#e74c3c',
-                                                background: '#fff5f5',
-                                                timer: 5000,
-                                                timerProgressBar: true,
-                                                showCloseButton: true,
-                                                backdrop: 'rgba(0,0,0,0.6)',
-                                                zIndex: 9999999,
-                                            });
-                                            return;
-                                        }
-
+if (amountNum) {
+    Swal.fire({
+        icon: 'success',
+        title: '✅ Withdrawal Submitted!',
+        html: `
+            <div style="text-align: center; padding: 10px 0;">
+                <div style="font-size: 40px; margin-bottom: 10px;">🎉</div>
+                <div style="font-size: 22px; font-weight: 700; color: #28a745; margin-bottom: 8px;">
+                    $${amountNum.toFixed(2)}
+                </div>
+                <div style="font-size: 15px; color: #6c757d;">
+                    Your withdrawal request has been submitted successfully!
+                </div>
+            </div>
+        `,
+        confirmButtonText: 'OK',
+        confirmButtonColor: '#28a745',
+        timer: 3000,
+        timerProgressBar: true,
+        showCloseButton: true,
+        background: '#f0fdf4',
+        backdrop: 'rgba(0,0,0,0.6)',
+        zIndex: 9999999,
+    });
+    return;
+}
                                         if (amountNum > displayBalance) {
                                             Swal.fire({
                                                 icon: 'error',
