@@ -10,15 +10,12 @@ import "./UserDetails.css";
 const currencyRates = {
     USD: 1,
     INR: 90,
-    EUR: 0.92,
-    GBP: 0.78
+
 };
 
 const currencySymbols = {
     USD: "$",
     INR: "₹",
-    EUR: "€",
-    GBP: "£"
 };
 
 const DownlineUserHistory = () => {

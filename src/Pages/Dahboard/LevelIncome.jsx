@@ -141,10 +141,7 @@ const menuItems = [
                               <div className="level-counts-wrapper">
                                 <button className="close-btn-line" onClick={() => setOpen(false)}>✕</button>
                                 <div className="coins">
-                                  {/* <div className="level-card">
-                                    <span className="stext">Direct Id</span>
-                                    <span>{userData?.directId || 0}</span>
-                                  </div> */}
+
                                     <div className="level-card">
                                     <span className="stext">Invest Business</span>
                                     <span>${userData?.MiningTeamBusiness || 0}</span>

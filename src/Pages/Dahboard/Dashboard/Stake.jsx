@@ -232,10 +232,10 @@ const Stake = () => {
           const statusRes = await apiClient.get(`/User/check-user-bot-status?loginid=${loginId}`);
           
           if (statusRes.data?.success && statusRes.data.data) {
-            const botStatus = statusRes.data.data.BotStatus || 0;
+            const botStatus = statusRes.data.data.BotStatus;
             
             if (botStatus > 0) {
-              toast.success(" BOT is already active for this user!");
+              // toast.success(" BOT is already active for this user!"); 
               setIsBotActive(true);
               setUserRegNo(statusRes.data.data.regno);
               setIsSubscribing(false);

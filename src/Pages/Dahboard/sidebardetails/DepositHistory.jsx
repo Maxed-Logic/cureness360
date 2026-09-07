@@ -5,20 +5,6 @@ import CustomTable from "../CustomTable/CustomTable";
 import Pagination from "../../../components/ui/Pagination";
 import "./UserDetails.css";
 
-// Currency Configuration
-const currencyRates = {
-    USD: 1,
-    INR: 90,
-    EUR: 0.92,
-    GBP: 0.78
-};
-
-const currencySymbols = {
-    USD: "$",
-    INR: "₹",
-    EUR: "€",
-    GBP: "£"
-};
 
 const DepositHistory = () => {
     const { userData } = useUser();
@@ -33,61 +19,9 @@ const DepositHistory = () => {
     const [depositCurrentPage, setDepositCurrentPage] = useState(1);
     const depositItemsPerPage = 10;
 
-    // Currency State
-    const [selectedCurrency, setSelectedCurrency] = useState(() => {
-        return sessionStorage.getItem("selectedCurrency") || "USD";
-    });
 
     const filterType = "ALL";
     const regno = Number(userData?.regno || sessionStorage.getItem("regno"));
-
-    // Format currency function
-    const formatCurrency = (amount) => {
-        if (!amount && amount !== 0) return `${currencySymbols[selectedCurrency]}0.00`;
-        const converted = amount * currencyRates[selectedCurrency];
-        return `${currencySymbols[selectedCurrency]}${converted.toLocaleString(undefined, {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
-        })}`;
-    };
-
-    // Update all currency elements
-    const changeCurrency = (currency) => {
-        sessionStorage.setItem("selectedCurrency", currency);
-        document.querySelectorAll(".currency1").forEach(function (el) {
-            let amount = parseFloat(el.getAttribute("data-value"));
-            if (isNaN(amount)) {
-                let text = el.innerText;
-                let match = text.match(/(\d+(?:\.\d+)?)/);
-                amount = match ? parseFloat(match[1]) : 0;
-            }
-            if (!isNaN(amount)) {
-                let converted = amount * currencyRates[currency];
-                el.innerHTML = currencySymbols[currency] + converted.toLocaleString(undefined, {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2
-                });
-            }
-        });
-    };
-
-    // Listen for currency changes from Header
-    useEffect(() => {
-        const handleCurrencyChange = () => {
-            let newCurrency = sessionStorage.getItem("selectedCurrency") || "USD";
-            setSelectedCurrency(newCurrency);
-            changeCurrency(newCurrency);
-        };
-        window.addEventListener('currencyChanged', handleCurrencyChange);
-        return () => window.removeEventListener('currencyChanged', handleCurrencyChange);
-    }, []);
-
-    // Initialize currency on mount
-    useEffect(() => {
-        let savedCurrency = sessionStorage.getItem("selectedCurrency") || "USD";
-        setSelectedCurrency(savedCurrency);
-        setTimeout(() => changeCurrency(savedCurrency), 100);
-    }, []);
 
     // ========== DEPOSIT: Fetch all data once (client-side pagination) ==========
     const fetchAllDepositData = async () => {
@@ -183,12 +117,12 @@ const DepositHistory = () => {
                 <td>{item.dt || "-"}</td>
                 <td className="credit">
                     <span className="currency1" data-value={item.credit || 0}>
-                        {formatCurrency(item.credit || 0)}
+                        ${item.credit || 0}
                     </span>
                 </td>
                 <td className="debit">
                     <span className="currency1" data-value={item.debit || 0}>
-                        {formatCurrency(item.debit || 0)}
+                        ${item.debit || 0}
                     </span>
                 </td>
                 <td className="text-muted" title={item.remark || item.Remark || "-"}>
@@ -208,7 +142,7 @@ const DepositHistory = () => {
                         <div className="p-2" style={{ fontWeight: "500" }}>
                             Total Balance: 
                             <span className="currency1" data-value={totalBalance}>
-                                {formatCurrency(totalBalance)}
+                                {totalBalance}
                             </span>
                         </div>
                     </div>

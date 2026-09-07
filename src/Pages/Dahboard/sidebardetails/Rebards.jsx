@@ -4,21 +4,6 @@ import apiClient from "../../../api/apiClient";
 import CustomTable from "../CustomTable/CustomTable";
 import Pagination from "../../../components/ui/Pagination";
 
-// Currency Configuration
-const currencyRates = {
-    USD: 1,
-    INR: 90,
-    EUR: 0.92,
-    GBP: 0.78
-};
-
-const currencySymbols = {
-    USD: "$",
-    INR: "₹",
-    EUR: "€",
-    GBP: "£"
-};
-
 const BonusReport = () => {
     const [records, setRecords] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -28,73 +13,17 @@ const BonusReport = () => {
     const [pageIndex, setPageIndex] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(15);
 
-    // Currency State
-    const [selectedCurrency, setSelectedCurrency] = useState(() => {
-        return sessionStorage.getItem("selectedCurrency") || "USD";
-    });
+
 
     const regno = sessionStorage.getItem("regno");
-    const token = sessionStorage.getItem("token");
-
-    // Format currency function
-    const formatCurrency = (amount) => {
-        if (!amount && amount !== 0) return `${currencySymbols[selectedCurrency]}0.00`;
-        const converted = amount * currencyRates[selectedCurrency];
-        return `${currencySymbols[selectedCurrency]}${converted.toLocaleString(undefined, {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
-        })}`;
-    };
-
-    // Update all currency elements
-    const changeCurrency = (currency) => {
-        sessionStorage.setItem("selectedCurrency", currency);
-        document.querySelectorAll(".currency1").forEach(function (el) {
-            let amount = parseFloat(el.getAttribute("data-value"));
-            if (isNaN(amount)) {
-                let text = el.innerText;
-                let match = text.match(/(\d+(?:\.\d+)?)/);
-                amount = match ? parseFloat(match[1]) : 0;
-            }
-            if (!isNaN(amount)) {
-                let converted = amount * currencyRates[currency];
-                el.innerHTML = currencySymbols[currency] + converted.toLocaleString(undefined, {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2
-                });
-            }
-        });
-    };
-
-    // Listen for currency changes from Header
-    useEffect(() => {
-        const handleCurrencyChange = () => {
-            let newCurrency = sessionStorage.getItem("selectedCurrency") || "USD";
-            setSelectedCurrency(newCurrency);
-            changeCurrency(newCurrency);
-        };
-        window.addEventListener('currencyChanged', handleCurrencyChange);
-        return () => window.removeEventListener('currencyChanged', handleCurrencyChange);
-    }, []);
-
-    // Initialize currency on mount
-    useEffect(() => {
-        let savedCurrency = sessionStorage.getItem("selectedCurrency") || "USD";
-        setSelectedCurrency(savedCurrency);
-        setTimeout(() => changeCurrency(savedCurrency), 100);
-    }, []);
+    // const token = sessionStorage.getItem("token");
 
     useEffect(() => {
         const fetchBonus = async () => {
             try {
                 setLoading(true);
                 const res = await apiClient.get(
-                    `/Dashboard/member-reward/${regno}`,
-                    {
-                        headers: {
-                            Authorization: `Bearer ${token}`,
-                        },
-                    }
+                    `/Dashboard/member-reward/${regno}`
                 );
                 if (res.data.success) {
                     setRecords(res.data.data);
@@ -107,10 +36,10 @@ const BonusReport = () => {
                 setLoading(false);
             }
         };
-        if (regno && token) {
+        if (regno ) {
             fetchBonus();
         }
-    }, [regno, token]);
+    }, [regno]);
 
     // Filter records based on search term
     const filteredRecords = records.filter((row) => {
@@ -188,7 +117,7 @@ const BonusReport = () => {
                                 <td>{row.Remaining_PowerLeg || 0} / {row.Remaining_OtherLeg || 0}</td>
                                 <td>
                                     <span className="currency1" style={{color: "green"}} data-value={row.Bot100_amt || 0}>
-                                        {formatCurrency(row.Bot100_amt || 0)}
+                                        ${row.Bot100_amt || 0}
                                     </span>
                                 </td>
                                 <td
@@ -201,6 +130,8 @@ const BonusReport = () => {
                                 </td>
                             </tr>
                         ))
+
+                        
                     ) : (
                         <tr>
                             <td colSpan={6} className="text-center py-4">

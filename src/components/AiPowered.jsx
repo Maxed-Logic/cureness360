@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, {  useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { FaStar } from 'react-icons/fa';
 
@@ -10,19 +10,6 @@ import testiImg1 from '../assets/images01/resource/bot.png';
 const TestimonialsSection = () => {
   const bgRef = useRef(null);
 
-  // useEffect(() => {
-  //   const handleScroll = () => {
-  //     if (bgRef.current) {
-  //       const scrollPosition = window.scrollY;
-  //       const sectionPosition = bgRef.current.parentElement?.offsetTop || 0;
-  //       const relativeScroll = scrollPosition - sectionPosition;
-  //       bgRef.current.style.transform = `translateY(${relativeScroll * 0.2}px)`;
-  //     }
-  //   };
-
-  //   window.addEventListener('scroll', handleScroll);
-  //   return () => window.removeEventListener('scroll', handleScroll);
-  // }, []);
 
   return (
     <section className="testimonials-two">

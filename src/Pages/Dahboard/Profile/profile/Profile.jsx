@@ -21,7 +21,9 @@ const ProfilePage = () => {
   // Password visibility states
   const [showPersonalPassword, setShowPersonalPassword] = useState(false);
   const [showBankPassword, setShowBankPassword] = useState(false);
+  const walletRegex = /^0x[a-fA-F0-9]{40}$/;
 
+  
   const [formData, setFormData] = useState({
     loginId: "",
     fullName: "",
@@ -337,17 +339,22 @@ const ProfilePage = () => {
                   />
                 </div>
 
-                <div className="form-group">
-                  <label className="text"><FaPhone className="input-icon" /> Mobile Number</label>
-                  <input 
-                    type="tel" 
-                    name="mobileNumber" 
-                    value={formData.mobileNumber} 
-                    onChange={handleChange}
-                    className="text" 
-                    required
-                  />
-                </div>
+   <div className="form-group">
+  <label className="text"><FaPhone className="input-icon" /> Mobile Number</label>
+  <input 
+    type="tel" 
+    name="mobileNumber" 
+    value={formData.mobileNumber} 
+    onChange={(e) => {
+      const value = e.target.value.replace(/\D/g, '');
+      setFormData({ ...formData, mobileNumber: value });
+    }} 
+    className="text" 
+    placeholder="Enter mobile number (minimum 10 digits)"
+    required
+    minLength="10"
+  />
+</div>
 
                 <div className="form-group">
                   <label className="text">
@@ -395,25 +402,28 @@ const ProfilePage = () => {
               
               <div className="card-body p-3">
                 {/* BEP20 Wallet Address */}
-                <div className="form-group wallet-group">
-                  <label className="text">
-                    <FaWallet className="input-icon" /> BEP20 Wallet Address
-                  </label>
-                  <div className="wallet-input-wrapper">
-                    <input 
-                      type="text" 
-                      name="wallwtaddresh" 
-                      value={formData.wallwtaddresh} 
-                      onChange={handleChange} 
-                      placeholder="0x... Enter BEP20 Wallet Address" 
-                      className="wallet-input-field"
-                    />
-                    <button type="button" className="copy-wallet-btn" onClick={handleCopyWallet} title="Copy address">
-                      <FaCopy />
-                    </button>
-                  </div>
-                  {copySuccess && <span className="copy-feedback">{copySuccess}</span>}
-                </div>
+         <div className="form-group wallet-group">
+  <label className="text">
+    <FaWallet className="input-icon" /> BEP20 Wallet Address
+  </label>
+  <div className="wallet-input-wrapper">
+    <input 
+      type="text" 
+      name="wallwtaddresh" 
+      value={formData.wallwtaddresh} 
+      onChange={handleChange} 
+      placeholder="0x... Enter BEP20 Wallet Address" 
+      className="wallet-input-field"
+      pattern="^0x[a-fA-F0-9]{40}$"  
+      title="Bank Account" 
+      required // ✅ Yeh add karo (optional)
+    />
+    <button type="button" className="copy-wallet-btn" onClick={handleCopyWallet} title="Copy address">
+      <FaCopy />
+    </button>
+  </div>
+  {copySuccess && <span className="copy-feedback">{copySuccess}</span>}
+</div>
 
                 <div className="form-group">
                   <label className="text"><FaUser className="input-icon" /> Account Holder Name</label>
@@ -453,17 +463,20 @@ const ProfilePage = () => {
                   </div>
                 </div>
 
-                <div className="form-group">
-                  <label className="text"><FaWallet className="input-icon" /> Account / UPI Number</label>
-                  <input 
-                    type="text" 
-                    name="accountNumber" 
-                    value={formData.accountNumber} 
-                    onChange={handleChange} 
-                    placeholder="Enter Account / UPI Number" 
-                    required
-                  />
-                </div>
+   <div className="form-group">
+  <label className="text"><FaWallet className="input-icon" /> Account / UPI Number</label>
+  <input 
+    type="text" 
+    name="accountNumber" 
+    value={formData.accountNumber} 
+    onChange={(e) => {
+      const value = e.target.value.replace(/\D/g, '');
+      setFormData({ ...formData, accountNumber: value });
+    }} 
+    placeholder="Enter Account / UPI Number" 
+    required
+  />
+</div>
 
                 {/* MASTER PASSWORD - Bank Form */}
                 <div className="form-group">

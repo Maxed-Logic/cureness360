@@ -1,8 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { IoSend } from 'react-icons/io5';
-import { FaCreditCard, FaRegCopy } from 'react-icons/fa';
-import { FiCopy, FiFileText, FiFile, FiPrinter } from 'react-icons/fi';
-import { FaFileCsv, FaFilePdf } from 'react-icons/fa';
+import { FiCopy} from 'react-icons/fi';
 import CustomTable from '../CustomTable/CustomTable';
 import Pagination from '../../../components/ui/Pagination';
 import { useUser } from '../../../context/UserContext';
@@ -35,11 +32,8 @@ const CapitalWithdrawalRequest = () => {
     const [walletAddress, setWalletAddress] = useState('');
     const [accountNumber, setAccountNumber] = useState('');
 
-    const [selectedCurrency, setSelectedCurrency] = useState(() => {
-        return sessionStorage.getItem('selectedCurrency') || 'USD';
-    });
 
-    const investmentBalance = userData?.Invest || 0;
+    const investmentBalance = userData?.Invest;
     const incomeBalance = (userData?.Working || 0) + (userData?.Smart_Wallet || 0);
 
     let withdrawalBalance = 0;
@@ -136,18 +130,6 @@ const CapitalWithdrawalRequest = () => {
         loadBankDetailsFromSession();
     }, []);
 
-    useEffect(() => {
-        const handleCurrencyChange = (event) => {
-            setSelectedCurrency(event.detail || 'USD');
-        };
-        
-        window.addEventListener('currencyChanged', handleCurrencyChange);
-        
-        return () => {
-            window.removeEventListener('currencyChanged', handleCurrencyChange);
-        };
-    }, []);
-
     const handleOTPAction = async () => {
         if (!otpSent) {
             if (!selectedMethod) {
@@ -191,7 +173,7 @@ const CapitalWithdrawalRequest = () => {
                     const data = error.response.data;
                     toast.error(data.message || 'Failed to send OTP. Please try again.');
                 } else {
-                    toast.error('Network error. Please check your connection.');
+                    toast.error('Please check your connection.');
                 }
             } finally {
                 setIsSendingOTP(false);
@@ -239,7 +221,7 @@ const CapitalWithdrawalRequest = () => {
                     const data = error.response.data;
                     toast.error(data.message || 'OTP verification failed. Please try again.');
                 } else {
-                    toast.error('Network error. Please check your connection.');
+                    toast.error('Please check your connection.');
                 }
                 setOtpVerified(false);
             } finally {

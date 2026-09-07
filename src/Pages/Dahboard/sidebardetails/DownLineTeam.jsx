@@ -9,15 +9,13 @@ import { Link } from "react-router-dom";
 const currencyRates = {
     USD: 1,
     INR: 90,
-    EUR: 0.92,
-    GBP: 0.78
+
 };
 
 const currencySymbols = {
     USD: "$",
     INR: "₹",
-    EUR: "€",
-    GBP: "£"
+
 };
 
 const DownlineTeam = () => {
@@ -230,8 +228,8 @@ const DownlineTeam = () => {
                                         <div className="user-id-subtext">{user.introName || "N/A"}</div>
                                     </td>
                                     <td className="text-center">
-                                        <div className="amount-text-green currency1" data-value={user.FundInvest || 0}>
-                                            {formatCurrency(user.FundInvest || 0)}
+                                        <div className="amount-text-green currency1" data-value={user.Stake || 0}>
+                                            {formatCurrency(user.Stake || 0)}
                                         </div>
                                         <div className="date-subtext">
                                             {user.TopupDate || "-"}
