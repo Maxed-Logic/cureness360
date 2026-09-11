@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { RiP2pFill } from "react-icons/ri";
 import { FaHistory } from "react-icons/fa";
-import { IoSend, IoClose } from "react-icons/io5";
+import { IoSend, IoClose, IoCheckmarkCircle, IoCloseCircle } from "react-icons/io5";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "../../../context/UserContext";
 import apiClient from "../../../api/apiClient";
@@ -13,7 +13,6 @@ import "./UserDetails.css";
 const currencyRates = {
     USD: 1,
     INR: 90,
-
 };
 
 const currencySymbols = {
@@ -53,7 +52,7 @@ export const Deposit2Deposit = () => {
         sessionStorage.getItem('regno')
     );
 
-    // ---------- State for P2P Transfer (Smart Wallet to Smart Wallet) ----------
+    // ---------- State for P2P Transfer ----------
     const [amount1, setAmount1] = useState("");
     const [investUserId1, setInvestUserId1] = useState("");
     const [checkingUser1, setCheckingUser1] = useState(false);
@@ -61,13 +60,14 @@ export const Deposit2Deposit = () => {
     const [userName1, setUserName1] = useState("");
     const [loading1, setLoading1] = useState(false);
 
-    // ---------- State for Self Transfer (Income Wallet to Deposit Wallet) ----------
+    // ---------- State for Self Transfer ----------
     const [amount2, setAmount2] = useState(100);
     const [otp, setOtp] = useState("");
     const [loading2, setLoading2] = useState(false);
-    const [otpTimer, setOtpTimer] = useState(0);
-    const [otpIntervalId, setOtpIntervalId] = useState(null);
     const [isSendingOtp, setIsSendingOtp] = useState(false);
+    const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
+    const [otpVerified, setOtpVerified] = useState(false);
+    const [otpError, setOtpError] = useState(false);   // 🆕 गलत OTP के लिए
 
     const depositOptions = [100, 300, 500, 1000, 10000, 50000];
     const isLoading = !userData;
@@ -142,10 +142,10 @@ export const Deposit2Deposit = () => {
         return !validUser1 || loading1 || amount1 <= 0 || !investUserId1 || investUserId1.trim() === "";
     }, [validUser1, loading1, amount1, investUserId1]);
 
-    // Button disable condition for Self Transfer
+    // Button disable condition for Self Transfer — OTP verified होना ज़रूरी
     const isSelfTransferDisabled = useMemo(() => {
-        return loading2 || !otp || otp.trim() === "" || amount2 <= 0;
-    }, [loading2, otp, amount2]);
+        return loading2 || !otpVerified || amount2 <= 0;
+    }, [loading2, otpVerified, amount2]);
 
     // ---------- P2P user check ----------
     const checkUser1 = async (id) => {
@@ -180,7 +180,7 @@ export const Deposit2Deposit = () => {
         }
     };
 
-    // ---------- P2P TRANSFER: Smart Wallet to Smart Wallet ----------
+    // ---------- P2P TRANSFER ----------
     const handleSmartWalletTransfer = async () => {
         if (!investUserId1 || investUserId1.trim() === "") {
             toast.error("Please enter User ID");
@@ -218,12 +218,10 @@ export const Deposit2Deposit = () => {
 
             if (response.data.success) {
                 toast.success(response.data.message || "Transfer successful!");
-
-                setAmount1(100);
+                setAmount1("");
                 setInvestUserId1("");
                 setUserName1("");
                 setValidUser1(false);
-
                 await refreshData();
             } else {
                 toast.error(response.data.message || "Transfer failed");
@@ -237,11 +235,9 @@ export const Deposit2Deposit = () => {
         }
     };
 
-    // ---------- SEND OTP for Self Transfer ----------
+    // ---------- SEND OTP ----------
     const sendOtp = async () => {
-        if (isSendingOtp || otpTimer > 0) {
-            return;
-        }
+        if (isSendingOtp) return;
 
         if (!regno) {
             toast.error("Registration number not found. Please login again.");
@@ -255,20 +251,9 @@ export const Deposit2Deposit = () => {
 
             if (response.data.success || response.data.status === 'success') {
                 toast.success("OTP sent successfully!");
-                setOtpTimer(300);
-
-                const interval = setInterval(() => {
-                    setOtpTimer((prev) => {
-                        if (prev <= 1) {
-                            clearInterval(interval);
-                            setOtpIntervalId(null);
-                            return 0;
-                        }
-                        return prev - 1;
-                    });
-                }, 1000);
-
-                setOtpIntervalId(interval);
+                setOtp("");
+                setOtpVerified(false);
+                setOtpError(false);
             } else {
                 toast.error(response.data.message || "Failed to send OTP");
             }
@@ -280,7 +265,47 @@ export const Deposit2Deposit = () => {
         }
     };
 
-    // ---------- SELF TRANSFER: Income Wallet to Deposit Wallet ----------
+    // ---------- VERIFY OTP (manual button) ----------
+    const verifyOtp = async () => {
+        if (!otp || otp.trim() === "") {
+            toast.error("Please enter OTP");
+            return;
+        }
+        if (!regno) {
+            toast.error("Registration number not found. Please login again.");
+            return;
+        }
+
+        setIsVerifyingOtp(true);
+        setOtpError(false);
+
+        try {
+            const verifyResponse = await apiClient.post('/User/verify-otp', null, {
+                params: { loginid, regno, otp }
+            });
+
+            console.log("OTP verify response:", verifyResponse.data); // 🔍 debug
+
+            if (verifyResponse.data.success === true) {
+                setOtpVerified(true);
+                setOtpError(false);
+                toast.success("OTP verified successfully!");
+            } else {
+                setOtpVerified(false);
+                setOtpError(true);   // ❌ गलत OTP
+                toast.error(verifyResponse.data.message || "Invalid OTP");
+            }
+        } catch (err) {
+            console.error("OTP verify error:", err);
+            setOtpVerified(false);
+            setOtpError(true);
+            toast.error(err.response?.data?.message || "OTP verification failed");
+        } finally {
+            setIsVerifyingOtp(false);
+        }
+    };
+
+    // ---------- SELF TRANSFER ----------
     const handleSelfTransfer = async () => {
         if (!amount2 || amount2 <= 0) {
             toast.error("Please enter valid amount");
@@ -290,26 +315,14 @@ export const Deposit2Deposit = () => {
             toast.error(`Insufficient Income Wallet balance. Available: ${formatBalance(userData.totalWallet)}`);
             return;
         }
-        if (!otp || otp.trim() === "") {
-            toast.error("Please enter OTP");
+        if (!otpVerified) {
+            toast.error("Please verify OTP first");
             return;
         }
 
         setLoading2(true);
 
         try {
-            // Verify OTP
-            const verifyResponse = await apiClient.post('/User/verify-otp', null, {
-                params: { loginid, regno, otp }
-            });
-
-            if (!verifyResponse.data.success) {
-                toast.error(verifyResponse.data.message || "Invalid OTP");
-                setLoading2(false);
-                return;
-            }
-
-            // Fund Transfer
             const transferPayload = {
                 regno: regno,
                 reciveId: loginid,
@@ -321,15 +334,10 @@ export const Deposit2Deposit = () => {
 
             if (transferResponse.data.success) {
                 toast.success(transferResponse.data.message || "Transfer successful!");
-
                 setAmount2(100);
                 setOtp("");
-                setOtpTimer(0);
-                if (otpIntervalId) {
-                    clearInterval(otpIntervalId);
-                    setOtpIntervalId(null);
-                }
-
+                setOtpVerified(false);
+                setOtpError(false);
                 await refreshData();
             } else {
                 toast.error(transferResponse.data.message || "Transfer failed");
@@ -343,13 +351,6 @@ export const Deposit2Deposit = () => {
         }
     };
 
-    // Cleanup timer on unmount
-    useEffect(() => {
-        return () => {
-            if (otpIntervalId) clearInterval(otpIntervalId);
-        };
-    }, [otpIntervalId]);
-
     // ---------- Render ----------
     return (
         <>
@@ -359,8 +360,8 @@ export const Deposit2Deposit = () => {
                     <div className="loading">Loading Wallet...</div>
                 ) : (
                     <div className="deposit-col d-flex flex-lg-nowrap flex-wrap justify-content-between align-items-start p-1">
-                        
-                        {/* ====== CARD 1: INCOME WALLET TO DEPOSIT WALLET (Self Transfer) ====== */}
+
+                        {/* ====== CARD 1: SELF TRANSFER ====== */}
                         <div className="deposit-card">
                             <div className="d-flex justify-content-between ">
                                 <div className="deposit-title">
@@ -433,36 +434,96 @@ export const Deposit2Deposit = () => {
                                         ))}
                                     </div>
 
-                                    <div className="input-container">
-                                        <span className="currency-symbol1">ENTER OTP</span>
-                                        <span className="divider">|</span>
-                                        <input
-                                            type="number"
-                                            className="amount-input"
-                                            value={otp}
-                                            onChange={(e) => setOtp(e.target.value)}
-                                            placeholder="Enter OTP"
-                                        />
-                                        <button
-                                            className="clear-btn"
-                                            onClick={sendOtp}
-                                            disabled={isSendingOtp || otpTimer > 0}
-                                            title={isSendingOtp ? "Sending OTP..." : (otpTimer > 0 ? `Wait ${Math.floor(otpTimer / 60)}:${(otpTimer % 60).toString().padStart(2, "0")}` : "Send OTP")}
-                                        >
-                                            {isSendingOtp ? (
-                                                <span className="otp-spinner"></span>
-                                            ) : otpTimer > 0 ? (
-                                                `${Math.floor(otpTimer / 60)}:${(otpTimer % 60).toString().padStart(2, "0")}`
-                                            ) : (
-                                                <IoSend />
-                                            )}
-                                        </button>
-                                    </div>
+<div className="d-flex align-items-center gap-2">
+    {/* OTP Input */}
+    <div className="input-container d-flex align-items-center flex-grow-1">
+        <input
+            type="number"
+            className="amount-input flex-grow-1"
+            value={otp}
+            onChange={(e) => {
+                setOtp(e.target.value);
+                if (otpVerified) setOtpVerified(false);
+                if (otpError) setOtpError(false);
+            }}
+            placeholder="Enter OTP"
+            disabled={otpVerified}
+        />
+
+        {otp && !otpVerified && (
+            <button
+                className="clear-btn"
+                onClick={() => {
+                    setOtp("");
+                    setOtpVerified(false);
+                    setOtpError(false);
+                }}
+                title="Clear"
+                type="button"
+            >
+                <IoClose />
+            </button>
+        )}
+    </div>
+
+    {/* Button — fixed width, vertically centered */}
+    <div className="flex-shrink-0">
+        {!otpVerified ? (
+            !otp ? (
+                <button
+                    className="btn btn-primary text-nowrap"
+                    style={{ minWidth: "110px", height: "47px", marginTop: "-18px"}}
+                    onClick={sendOtp}
+                    disabled={isSendingOtp}
+                    type="button"
+            
+                >
+                    {isSendingOtp ? "Sending..." : "Send OTP"}
+                </button>
+            ) : (
+                <button
+                    className="btn btn-success text-nowrap"
+                    style={{ minWidth: "110px", height: "47px",marginTop: "-18px" }}
+                    onClick={verifyOtp}
+                    disabled={isVerifyingOtp || !otp || otp.trim() === ""}
+                    type="button"
+                >
+                    {isVerifyingOtp ? "Verifying..." : "Verify OTP"}
+                </button>
+            )
+        ) : (
+            <div
+                className="text-success fw-bold d-flex align-items-center justify-content-center gap-1 text-nowrap"
+                style={{ minWidth: "110px", height: "42px" }}
+            >
+                <IoCheckmarkCircle size={18} />
+                Verified
+            </div>
+        )}
+    </div>
+</div>
+
+{/* Invalid OTP error */}
+{otpError && !otpVerified && (
+    <div className="text-danger fw-bold d-flex align-items-center gap-1 mt-2 text-nowrap">
+        <IoCloseCircle size={18} />
+        Invalid OTP, please try again
+    </div>
+)}
+
+{/* Invalid OTP error */}
+{otpError && !otpVerified && (
+    <div className="text-danger fw-bold d-flex align-items-center gap-1 mt-2 text-nowrap">
+        <IoCloseCircle size={18} />
+        Invalid OTP, please try again
+    </div>
+)}
 
                                     <button
                                         className="deposit-btn"
                                         onClick={handleSelfTransfer}
                                         disabled={isSelfTransferDisabled}
+                                        style={{ marginTop: "12px" }}
                                     >
                                         {loading2 ? "Processing..." : "Transfer"}
                                     </button>
@@ -470,7 +531,7 @@ export const Deposit2Deposit = () => {
                             </div>
                         </div>
 
-                        {/* ====== CARD 2: SMART WALLET TO SMART WALLET (P2P Transfer) ====== */}
+                        {/* ====== CARD 2: P2P TRANSFER ====== */}
                         <div className="deposit-card">
                             <div className="d-flex justify-content-between ">
                                 <div className="deposit-title">
@@ -502,23 +563,6 @@ export const Deposit2Deposit = () => {
                                 </div>
 
                                 <div className="deposit2deposit-color">
-                                    {/* <div style={{ display: "flex", alignItems: "center", marginBottom: "15px" }}>
-                                        <span className="label-light" style={{ fontWeight: "bold" }}>P2P AMOUNT</span>
-                                        <input
-                                            type="range"
-                                            className="slider"
-                                            min="0"
-                                            max={userData.Smart_Wallet}
-                                            step="1"
-                                            value={amount1}
-                                            onChange={(e) => setAmount1(Number(e.target.value))}
-                                            style={{ width: "60%", margin: "0 10px" }}
-                                        />
-                                        <span className="value-light currency1" data-value={amount1}>
-                                            {formatCurrency(amount1)}
-                                        </span>
-                                    </div> */}
-
                                     <div className="summary-row">
                                         <span className="label-light" style={{ fontWeight: "bold" }}>USER ID</span>
                                         <div className="input-container1">

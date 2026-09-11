@@ -1,22 +1,10 @@
-import React, { useEffect, useState } from "react";
+import  { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import CustomTable from "./CustomTable/CustomTable";
 import Pagination from "../../components/ui/Pagination";
 import apiClient from "../../api/apiClient";
 import './sidebardetails/UserDetails.css';
 
-// Currency Configuration
-const currencyRates = {
-    USD: 1,
-    INR: 90,
-
-};
-
-const currencySymbols = {
-    USD: "$",
-    INR: "₹",
-
-};
 
 const AccStatement = () => {
     const location = useLocation();
@@ -26,11 +14,6 @@ const AccStatement = () => {
     const [loading, setLoading] = useState(true);
     const [hasNextPage, setHasNextPage] = useState(false);
     const [totalRecords, setTotalRecords] = useState(0);
-
-    // Currency State
-    const [selectedCurrency, setSelectedCurrency] = useState(() => {
-        return sessionStorage.getItem("selectedCurrency") || "USD";
-    });
 
     // Get type from URL
     const queryParams = new URLSearchParams(location.search);
@@ -53,64 +36,6 @@ const AccStatement = () => {
     const [pageSize] = useState(10);
 
     const regno = sessionStorage.getItem("regno");
-
-    // Function to format currency
-    const formatCurrency = (amount) => {
-        if (!amount && amount !== 0) return `${currencySymbols[selectedCurrency]}0.00`;
-        const converted = amount * currencyRates[selectedCurrency];
-        return `${currencySymbols[selectedCurrency]}${converted.toLocaleString(undefined, {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
-        })}`;
-    };
-
-    // Function to update all currency elements
-    const changeCurrency = (currency) => {
-        sessionStorage.setItem("selectedCurrency", currency);
-
-        document.querySelectorAll(".currency1").forEach(function (el) {
-            let amount = parseFloat(el.getAttribute("data-value"));
-
-            if (isNaN(amount)) {
-                let text = el.innerText;
-                let match = text.match(/(\d+(?:\.\d+)?)/);
-                amount = match ? parseFloat(match[1]) : 0;
-            }
-
-            if (!isNaN(amount)) {
-                let converted = amount * currencyRates[currency];
-                el.innerHTML = currencySymbols[currency] + converted.toLocaleString(undefined, {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2
-                });
-            }
-        });
-    };
-
-    // Listen for currency changes from Header
-    useEffect(() => {
-        const handleCurrencyChange = () => {
-            let newCurrency = sessionStorage.getItem("selectedCurrency") || "USD";
-            setSelectedCurrency(newCurrency);
-            changeCurrency(newCurrency);
-        };
-
-        window.addEventListener('currencyChanged', handleCurrencyChange);
-
-        return () => {
-            window.removeEventListener('currencyChanged', handleCurrencyChange);
-        };
-    }, []);
-
-    // Initialize currency on mount
-    useEffect(() => {
-        let savedCurrency = sessionStorage.getItem("selectedCurrency") || "USD";
-        setSelectedCurrency(savedCurrency);
-
-        setTimeout(() => {
-            changeCurrency(savedCurrency);
-        }, 100);
-    }, []);
 
     // Function to get API param value from display type
     const getApiTypeValue = (displayType) => {
@@ -267,13 +192,13 @@ const AccStatement = () => {
                                 {/* ✅ Fixed - Credit amount with currency conversion */}
                                 <td className="text-success">
                                     <span className="currency1" data-value={item.credit || 0}>
-                                        {formatCurrency(item.credit || 0)}
+                                        ${item.credit || 0}
                                     </span>
                                 </td>
                                 {/* ✅ Fixed - Debit amount with currency conversion */}
                                 <td className="text-danger">
                                     <span className="currency1" data-value={item.debit || 0}>
-                                        {formatCurrency(item.debit || 0)}
+                                        ${item.debit || 0}
                                     </span>
                                 </td>
          

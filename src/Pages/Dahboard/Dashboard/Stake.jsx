@@ -450,7 +450,7 @@ const Stake = () => {
 
   return (
     <>
-      <div className="stake-card d-flex gap-3 align-items-center" style={{ marginBottom: "35px" }}>
+      <div className="stake-card d-flex gap-3 align-items-center" style={{ marginBottom: "15px" }}>
         <div style={{ position: "relative", flex: 1 }}>
           <input
             type="text"

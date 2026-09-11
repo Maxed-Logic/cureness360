@@ -97,21 +97,28 @@ const Signup = () => {
 
 
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
+const handleChange = (e) => {
+  const { name, value } = e.target;
 
-    setFormData((prev) => {
-      // 🔥 Jab introRegNo change ho toh dono fields update karo
-      if (name === "introRegNo") {
-        return {
-          ...prev,
-          introRegNo: value,
-          referrer_Id: value,    // ✅ Dono ko sync karo
-        };
-      }
-      return { ...prev, [name]: value };
-    });
-  };
+  setFormData((prev) => {
+    // 🔥 Mobile: sirf digits + max 10
+    if (name === "mobile") {
+      const onlyDigits = value.replace(/\D/g, "").slice(0, 10);
+      return { ...prev, mobile: onlyDigits };
+    }
+
+
+    if (name === "introRegNo") {
+      return {
+        ...prev,
+        introRegNo: value,
+        referrer_Id: value,   
+      };
+    }
+
+    return { ...prev, [name]: value };
+  });
+};
   // ADD COPY FUNCTION
   const handleCopy = (text, field) => {
     navigator.clipboard.writeText(text);
@@ -260,7 +267,16 @@ const Signup = () => {
                       <div className="form-box d-flex" style={{ gap: "10px" }}>
                         <div className="mt-3">
                           <span style={{ padding: "20px 20px", background: "#f0f0f0", borderRadius: "15px" }}>+91</span></div>
-                        <input type="text" name="mobile" placeholder="Mobile Number*" maxLength="10" value={formData.mobile} onChange={handleChange} required style={{ flex: 1 }} />
+<input 
+  type="tel" 
+  name="mobile" 
+  placeholder="Mobile Number*" 
+  maxLength="10" 
+  value={formData.mobile} 
+  onChange={handleChange} 
+  required 
+  style={{ flex: 1 }} 
+/>
                       </div>
                     </div>
                     <div className="col-lg-12">

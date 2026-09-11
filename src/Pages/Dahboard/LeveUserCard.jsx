@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   FaWallet,
   FaCopy,
@@ -10,92 +10,17 @@ import {
 import { useUser } from "../../context/UserContext";
 import { MdAccountBalance } from "react-icons/md";
 
-// Currency Configuration
-const currencyRates = {
-    USD: 1,
-    INR: 90,
-    EUR: 0.92,
-    GBP: 0.78
-};
-
-const currencySymbols = {
-    USD: "$",
-    INR: "₹",
-    EUR: "€",
-    GBP: "£"
-};
 
 const ProUserCard = () => {
   const { userData } = useUser();
   const [copied, setCopied] = useState(false);
-
-  // Currency State
-  const [selectedCurrency, setSelectedCurrency] = useState(() => {
-    return sessionStorage.getItem("selectedCurrency") || "USD";
-  });
 
   const baseUrl = "https://cureness360.com/";
   const referralLink = userData?.me
     ? `${baseUrl}signup?ref=${userData.me}`
     : baseUrl;
 
-  // Function to format currency
-  const formatCurrency = (amount) => {
-    if (!amount && amount !== 0) return `${currencySymbols[selectedCurrency]}0.00`;
-    const converted = amount * currencyRates[selectedCurrency];
-    return `${currencySymbols[selectedCurrency]}${converted.toLocaleString(undefined, {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    })}`;
-  };
 
-  // Function to update all currency elements
-  const changeCurrency = (currency) => {
-    sessionStorage.setItem("selectedCurrency", currency);
-    
-    document.querySelectorAll(".currency1").forEach(function(el) {
-      let amount = parseFloat(el.getAttribute("data-value"));
-      
-      if (isNaN(amount)) {
-        let text = el.innerText;
-        let match = text.match(/(\d+(?:\.\d+)?)/);
-        amount = match ? parseFloat(match[1]) : 0;
-      }
-      
-      if (!isNaN(amount)) {
-        let converted = amount * currencyRates[currency];
-        el.innerHTML = currencySymbols[currency] + converted.toLocaleString(undefined, {
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 2
-        });
-      }
-    });
-  };
-
-  // Listen for currency changes from Header
-  useEffect(() => {
-    const handleCurrencyChange = () => {
-      let newCurrency = sessionStorage.getItem("selectedCurrency") || "USD";
-      setSelectedCurrency(newCurrency);
-      changeCurrency(newCurrency);
-    };
-
-    window.addEventListener('currencyChanged', handleCurrencyChange);
-    
-    return () => {
-      window.removeEventListener('currencyChanged', handleCurrencyChange);
-    };
-  }, []);
-
-  // Initialize currency on mount
-  useEffect(() => {
-    let savedCurrency = sessionStorage.getItem("selectedCurrency") || "USD";
-    setSelectedCurrency(savedCurrency);
-    
-    setTimeout(() => {
-      changeCurrency(savedCurrency);
-    }, 100);
-  }, [userData]);
 
   // FIXED: Copy referral link to clipboard with fallback method
   const handleCopy = async () => {
@@ -109,16 +34,16 @@ const ProUserCard = () => {
         // Fallback method for non-HTTPS or older browsers
         const textArea = document.createElement("textarea");
         textArea.value = referralLink;
-        
+
         // Make the textarea out of viewport
         textArea.style.position = "fixed";
         textArea.style.left = "-999999px";
         textArea.style.top = "-999999px";
         document.body.appendChild(textArea);
-        
+
         textArea.focus();
         textArea.select();
-        
+
         try {
           const successful = document.execCommand('copy');
           if (successful) {
@@ -162,7 +87,7 @@ const ProUserCard = () => {
         <div>
           <span>Total Wallet Balance</span>
           <div className="card-Balance currency1" data-value={userData?.Depositfund || 0}>
-            {formatCurrency(userData?.Depositfund || 0)}
+            ${userData?.Depositfund || 0}
           </div>
         </div>
       </div>
@@ -184,7 +109,7 @@ const ProUserCard = () => {
         <div className="share-box">
           <p>Share with others</p>
           <div className="social-icons">
-          <span
+            <span
               className="ig"
               onClick={() =>
                 window.open(
@@ -195,7 +120,7 @@ const ProUserCard = () => {
                 )
               }
             >
-             <FaInstagram />
+              <FaInstagram />
             </span>
 
             {/* Facebook - opens share dialog */}
@@ -239,8 +164,7 @@ const ProUserCard = () => {
                     "Join using my referral link"
                   )}`,
                   "_blank"
-                )
-              }
+                )}
             >
               <FaTelegramPlane />
             </span>

@@ -57,30 +57,6 @@ const LevelIncome = () => {
     };
   }, [open, show, op]);
 
-useEffect(() => {
-//const regno = sessionStorage.getItem("regno");
- // const findlvl = 10;
-
-  // apiClient.get(`/Dashboard/team-counts`, {
-  //   params: { regno, findlvl }
-  // })
-  // .then((res) => {
-
-    
-  //   // ✅ Data is directly in res.data (not res.data.data)
-  //   const apiData = res.data;
-    
-  //   setLevels([
-  //     {
-  //       teamCount: apiData.totalTeam ?? 0,
-  //       active: apiData.activeTeam ?? 0,
-  //       inactive: apiData.inactiveTeam ?? 0,
-      
-  //     },
-  //   ]);
-  // })
-  // .catch((err) => console.log(" API ERROR:", err));
-}, [userData]);
 
   // Animation control for Team modal
   useEffect(() => {

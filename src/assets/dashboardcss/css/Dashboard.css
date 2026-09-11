@@ -5512,16 +5512,17 @@ margin-right: 25px;
   
 .main-menu-eight__logo {
   width: 54px;
-  height: auto;  /* 👈 CSS mein do */
+  height: auto; 
 }
 
 }
-
-
 .curs{
   cursor: not-allowed;
   background-color: #f1f1f1!important;
 }
+
+
+
 
 
 
